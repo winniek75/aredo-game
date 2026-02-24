@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Are / Do クイズゲーム</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --are: #e63946;
+    --do: #3a86ff;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #2b2d42;
+    --correct: #06d6a0;
+    --wrong: #ef233c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(230,57,70,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(58,134,255,0.06) 0%, transparent 50%);
+  }
+  h1 { font-family:'Nunito',sans-serif; font-size:clamp(1.4rem,4vw,2rem); color:var(--text); margin-bottom:8px; }
+  h1 span.are{color:var(--are);} h1 span.do{color:var(--do);}
+  .legend{display:flex;gap:20px;margin-bottom:16px;font-size:.85rem;color:#666;}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-badge{width:36px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:.75rem;color:white;}
+  .legend-badge.are{background:var(--are);} .legend-badge.do{background:var(--do);}
+  .settings{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:.85rem;color:#888;font-weight:700;}
+  .settings select{padding:6px 12px;border-radius:99px;border:2px solid #e0e0e0;font-family:'Noto Sans JP',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);background:white;cursor:pointer;outline:none;}
+  .settings select:focus{border-color:var(--do);}
+  .progress-wrap{width:min(520px,100%);height:6px;background:#e0e0e0;border-radius:99px;margin-bottom:16px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--are),var(--do));border-radius:99px;transition:width .4s ease;}
+  .score-row{display:flex;gap:16px;margin-bottom:18px;font-size:.88rem;font-weight:700;color:#888;}
+  .score-row span{display:flex;align-items:center;gap:5px;}
+  .score-row .num{font-size:1.15rem;color:var(--text);}
+  .card{background:var(--card);border-radius:24px;padding:32px 36px 28px;width:min(520px,100%);box-shadow:0 8px 40px rgba(0,0,0,.08);position:relative;overflow:hidden;}
+  .card.shake{animation:shake .4s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .card.pop{animation:pop .3s ease;}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.025)}100%{transform:scale(1)}}
+  .q-num{font-size:.78rem;font-weight:700;color:#bbb;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+  .emoji-row{font-size:2.8rem;margin-bottom:10px;line-height:1;}
+  .question-jp{font-size:clamp(1.4rem,5vw,2rem);font-weight:900;color:var(--text);margin-bottom:6px;line-height:1.2;}
+  .question-rest{font-size:clamp(.95rem,3vw,1.25rem);color:#888;margin-bottom:24px;font-weight:400;}
+  .question-rest code{font-family:'Nunito',sans-serif;font-weight:700;color:#bbb;font-size:1.1em;}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .btn{padding:16px 10px;border:none;border-radius:14px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.5rem;color:white;transition:transform .12s,box-shadow .12s;box-shadow:0 4px 14px rgba(0,0,0,.15);}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.2);}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;}
+  .btn-are{background:var(--are);} .btn-are:hover{background:#d62839;}
+  .btn-do{background:var(--do);} .btn-do:hover{background:#2971e6;}
+  .btn .sub{display:block;font-size:.6rem;font-family:'Noto Sans JP',sans-serif;font-weight:700;opacity:.85;margin-top:2px;letter-spacing:0;}
+  .btn.correct-flash{animation:correctFlash .5s ease forwards;}
+  @keyframes correctFlash{0%{box-shadow:0 0 0 0 var(--correct);}50%{box-shadow:0 0 0 10px rgba(6,214,160,.3);transform:scale(1.05);}100%{box-shadow:0 4px 14px rgba(0,0,0,.15);transform:scale(1);}}
+  .feedback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:24px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .feedback.show{opacity:1;pointer-events:all;}
+  .feedback.correct{background:rgba(6,214,160,.15);}
+  .feedback.wrong{background:rgba(239,35,60,.10);}
+  .feedback .fb-icon{font-size:3.5rem;margin-bottom:6px;}
+  .feedback .fb-text{font-size:1.15rem;font-weight:900;color:var(--text);}
+  .feedback .fb-answer{margin-top:6px;font-size:.85rem;color:#555;text-align:center;padding:0 20px;line-height:1.6;}
+  .feedback .fb-btn{margin-top:16px;padding:11px 30px;border-radius:99px;border:none;background:var(--text);color:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:transform .1s;}
+  .feedback .fb-btn:hover{transform:scale(1.05);}
+  .hint-row{margin-top:16px;text-align:center;font-size:.76rem;color:#ccc;font-weight:700;letter-spacing:.5px;}
+  #result{display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:40px 30px;background:white;border-radius:24px;box-shadow:0 8px 40px rgba(0,0,0,.08);width:min(520px,100%);animation:fadeIn .4s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  #result h2{font-family:'Nunito',sans-serif;font-size:1.8rem;color:var(--text);}
+  #result .big-score{font-family:'Nunito',sans-serif;font-size:5rem;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--are),var(--do));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  #result .rank{font-size:1.05rem;color:#888;}
+  #result .restart-btn{margin-top:8px;padding:14px 40px;border-radius:99px;border:none;background:linear-gradient(135deg,var(--are),var(--do));color:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;cursor:pointer;transition:transform .15s;box-shadow:0 4px 16px rgba(58,134,255,.3);}
+  #result .restart-btn:hover{transform:scale(1.05);}
+</style>
+</head>
+<body>
+
+<h1><span class="are">Are</span> vs <span class="do">Do</span> クイズ 🎯</h1>
+<div class="legend">
+  <div class="legend-item"><div class="legend-badge are">Are</div>状態（今どう？）</div>
+  <div class="legend-item"><div class="legend-badge do">Do</div>行動（普段どう？）</div>
+</div>
+
+<div class="settings">
+  出題数：
+  <select id="numSelect">
+    <option value="10">10問</option>
+    <option value="20" selected>20問</option>
+    <option value="30">30問</option>
+    <option value="50">50問</option>
+    <option value="100">全100問</option>
+  </select>
+</div>
+
+<div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
+<div class="score-row">
+  <span>✅ <span class="num" id="scoreCorrect">0</span></span>
+  <span>❌ <span class="num" id="scoreWrong">0</span></span>
+  <span>📝 <span class="num" id="scoreCurrent">1</span> / <span id="scoreTotal">20</span></span>
+</div>
+
+<div class="card" id="card">
+  <div class="q-num" id="qNum">Q 1 / 20</div>
+  <div class="emoji-row" id="qEmoji">😊</div>
+  <div class="question-jp" id="qJp"></div>
+  <div class="question-rest" id="qRest"></div>
+  <div class="btn-row">
+    <button class="btn btn-are" id="btnAre" onclick="answer('Are')">Are<span class="sub">状態（今どう？）</span></button>
+    <button class="btn btn-do"  id="btnDo"  onclick="answer('Do')">Do<span class="sub">行動（普段どう？）</span></button>
+  </div>
+  <div class="hint-row">日本語のヒントを見て考えよう！</div>
+  <div class="feedback" id="feedback">
+    <div class="fb-icon" id="fbIcon">✅</div>
+    <div class="fb-text" id="fbText">正解！</div>
+    <div class="fb-answer" id="fbAnswer"></div>
+    <button class="fb-btn" onclick="nextQuestion()">次の問題 →</button>
+  </div>
+</div>
+
+<div id="result">
+  <div style="font-size:3rem" id="resultEmoji">🎉</div>
+  <h2>結果発表！</h2>
+  <div class="big-score" id="resultScore">20 / 20</div>
+  <div class="rank" id="resultRank">完璧！マスター級！</div>
+  <button class="restart-btn" onclick="restart()">もう一度チャレンジ 🔄</button>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  // ── ARE（状態・形容詞・属性） ───────────────────────────────────────────────
+  {jp:'いそがしい？',        rest:'you busy?',                  ans:'Are',emoji:'😰',hint:'busy = 忙しい（状態）'},
+  {jp:'眠い？',              rest:'you sleepy?',                ans:'Are',emoji:'😴',hint:'sleepy = 眠い（状態）'},
+  {jp:'元気？',              rest:'you OK?',                    ans:'Are',emoji:'😊',hint:'OK = 元気な（状態）'},
+  {jp:'怒ってる？',          rest:'you angry?',                 ans:'Are',emoji:'😡',hint:'angry = 怒っている（状態）'},
+  {jp:'疲れた？',            rest:'you tired?',                 ans:'Are',emoji:'😩',hint:'tired = 疲れた（状態）'},
+  {jp:'幸せ？',              rest:'you happy?',                 ans:'Are',emoji:'😁',hint:'happy = 幸せ（状態）'},
+  {jp:'悲しい？',            rest:'you sad?',                   ans:'Are',emoji:'😢',hint:'sad = 悲しい（状態）'},
+  {jp:'緊張してる？',        rest:'you nervous?',               ans:'Are',emoji:'😬',hint:'nervous = 緊張している（状態）'},
+  {jp:'準備OK？',            rest:'you ready?',                 ans:'Are',emoji:'🙌',hint:'ready = 準備できた（状態）'},
+  {jp:'お腹すいた？',        rest:'you hungry?',                ans:'Are',emoji:'🍽️',hint:'hungry = 空腹（状態）'},
+  {jp:'のどかわいた？',      rest:'you thirsty?',               ans:'Are',emoji:'💧',hint:'thirsty = のどが渇いた（状態）'},
+  {jp:'寒い？',              rest:'you cold?',                  ans:'Are',emoji:'🥶',hint:'cold = 寒い（状態）'},
+  {jp:'暑い？',              rest:'you hot?',                   ans:'Are',emoji:'🥵',hint:'hot = 暑い（状態）'},
+  {jp:'大丈夫？',            rest:'you all right?',             ans:'Are',emoji:'🤔',hint:'all right = 大丈夫（状態）'},
+  {jp:'病気？',              rest:'you sick?',                  ans:'Are',emoji:'🤒',hint:'sick = 病気（状態）'},
+  {jp:'びっくりした？',      rest:'you surprised?',             ans:'Are',emoji:'😲',hint:'surprised = 驚いた（状態）'},
+  {jp:'怖い？',              rest:'you scared?',                ans:'Are',emoji:'😱',hint:'scared = 怖い（状態）'},
+  {jp:'退屈？',              rest:'you bored?',                 ans:'Are',emoji:'🥱',hint:'bored = 退屈（状態）'},
+  {jp:'遅刻してる？',        rest:'you late?',                  ans:'Are',emoji:'⏰',hint:'late = 遅刻している（状態）'},
+  {jp:'早い？',              rest:'you early?',                 ans:'Are',emoji:'🌅',hint:'early = 早い（状態）'},
+  {jp:'一人？',              rest:'you alone?',                 ans:'Are',emoji:'🧍',hint:'alone = 一人の（状態）'},
+  {jp:'今ひま？',            rest:'you free now?',              ans:'Are',emoji:'🗓️',hint:'free = 暇な（状態）'},
+  {jp:'うれしい？',          rest:'you glad?',                  ans:'Are',emoji:'😄',hint:'glad = うれしい（状態）'},
+  {jp:'背が高い？',          rest:'you tall?',                  ans:'Are',emoji:'📏',hint:'tall = 背が高い（状態）'},
+  {jp:'強い？',              rest:'you strong?',                ans:'Are',emoji:'💪',hint:'strong = 強い（状態）'},
+  {jp:'正しい？',            rest:'you right?',                 ans:'Are',emoji:'✔️',hint:'right = 正しい（状態）'},
+  {jp:'困ってる？',          rest:'you lost?',                  ans:'Are',emoji:'🗺️',hint:'lost = 迷っている（状態）'},
+  {jp:'先生？',              rest:'you a teacher?',             ans:'Are',emoji:'🍎',hint:'a teacher = 先生（属性）'},
+  {jp:'学生？',              rest:'you a student?',             ans:'Are',emoji:'📖',hint:'a student = 学生（属性）'},
+  {jp:'日本人？',            rest:'you Japanese?',              ans:'Are',emoji:'🇯🇵',hint:'Japanese = 日本人（属性）'},
+  {jp:'アメリカ人？',        rest:'you American?',              ans:'Are',emoji:'🇺🇸',hint:'American = アメリカ人（属性）'},
+  {jp:'今、家にいる？',      rest:'you at home now?',           ans:'Are',emoji:'🏠',hint:'at home = 家にいる（状態）'},
+  {jp:'今学校にいる？',      rest:'you at school now?',         ans:'Are',emoji:'🏫',hint:'at school = 学校にいる（状態）'},
+  {jp:'今外にいる？',        rest:'you outside now?',           ans:'Are',emoji:'🌳',hint:'outside = 外にいる（状態）'},
+  {jp:'仕事中？',            rest:'you at work?',               ans:'Are',emoji:'💼',hint:'at work = 仕事中（状態）'},
+  {jp:'旅行中？',            rest:'you on a trip?',             ans:'Are',emoji:'✈️',hint:'on a trip = 旅行中（状態）'},
+  {jp:'結婚してる？',        rest:'you married?',               ans:'Are',emoji:'💍',hint:'married = 結婚している（状態）'},
+  {jp:'忙しすぎる？',        rest:'you too busy?',              ans:'Are',emoji:'😵',hint:'too busy = 忙しすぎる（状態）'},
+  {jp:'チームの一員？',      rest:'you on the team?',           ans:'Are',emoji:'🏅',hint:'on the team = チームにいる（状態）'},
+  {jp:'一番？',              rest:'you the best?',              ans:'Are',emoji:'🥇',hint:'the best = 一番（状態）'},
+  {jp:'背が低い？',          rest:'you short?',                 ans:'Are',emoji:'👶',hint:'short = 背が低い（状態）'},
+  {jp:'若い？',              rest:'you young?',                 ans:'Are',emoji:'🧒',hint:'young = 若い（状態）'},
+  {jp:'頭がいい？',          rest:'you smart?',                 ans:'Are',emoji:'🧠',hint:'smart = 頭がいい（状態）'},
+  {jp:'忙しくない？',        rest:'you free?',                  ans:'Are',emoji:'😌',hint:'free = 空いている（状態）'},
+  {jp:'安全？',              rest:'you safe?',                  ans:'Are',emoji:'🛡️',hint:'safe = 安全（状態）'},
+  {jp:'有名？',              rest:'you famous?',                ans:'Are',emoji:'⭐',hint:'famous = 有名（状態）'},
+  {jp:'お金持ち？',          rest:'you rich?',                  ans:'Are',emoji:'💰',hint:'rich = お金持ち（状態）'},
+  {jp:'真面目？',            rest:'you serious?',               ans:'Are',emoji:'🧐',hint:'serious = 真面目（状態）'},
+  {jp:'恥ずかしい？',        rest:'you embarrassed?',           ans:'Are',emoji:'😳',hint:'embarrassed = 恥ずかしい（状態）'},
+  {jp:'満足してる？',        rest:'you satisfied?',             ans:'Are',emoji:'😌',hint:'satisfied = 満足している（状態）'},
+
+  // ── DO（行動・習慣） ───────────────────────────────────────────────────────
+  {jp:'コーヒー好き？',      rest:'you like coffee?',           ans:'Do',emoji:'☕',hint:'like = 好き（行動・習慣）'},
+  {jp:'英語を勉強する？',    rest:'you study English?',         ans:'Do',emoji:'📚',hint:'study = 勉強する（行動）'},
+  {jp:'音楽を聞く？',        rest:'you listen to music?',       ans:'Do',emoji:'🎵',hint:'listen to = 聞く（行動）'},
+  {jp:'サッカーをする？',    rest:'you play soccer?',           ans:'Do',emoji:'⚽',hint:'play = する（行動）'},
+  {jp:'ゲームをする？',      rest:'you play games?',            ans:'Do',emoji:'🎮',hint:'play = する（行動）'},
+  {jp:'日本語を話す？',      rest:'you speak Japanese?',        ans:'Do',emoji:'🗣️',hint:'speak = 話す（行動）'},
+  {jp:'犬が好き？',          rest:'you like dogs?',             ans:'Do',emoji:'🐶',hint:'like = 好き（行動）'},
+  {jp:'ご飯を食べる？',      rest:'you eat rice?',              ans:'Do',emoji:'🍚',hint:'eat = 食べる（行動）'},
+  {jp:'毎日運動する？',      rest:'you exercise every day?',    ans:'Do',emoji:'🏃',hint:'exercise = 運動する（習慣）'},
+  {jp:'映画を見る？',        rest:'you watch movies?',          ans:'Do',emoji:'🎬',hint:'watch = 見る（行動）'},
+  {jp:'テレビを見る？',      rest:'you watch TV?',              ans:'Do',emoji:'📺',hint:'watch = 見る（行動）'},
+  {jp:'歌を歌う？',          rest:'you sing songs?',            ans:'Do',emoji:'🎤',hint:'sing = 歌う（行動）'},
+  {jp:'本を読む？',          rest:'you read books?',            ans:'Do',emoji:'📖',hint:'read = 読む（行動）'},
+  {jp:'自転車に乗る？',      rest:'you ride a bike?',           ans:'Do',emoji:'🚲',hint:'ride = 乗る（行動）'},
+  {jp:'バスで来る？',        rest:'you come by bus?',           ans:'Do',emoji:'🚌',hint:'come by = ～で来る（行動）'},
+  {jp:'料理する？',          rest:'you cook?',                  ans:'Do',emoji:'🍳',hint:'cook = 料理する（行動）'},
+  {jp:'犬を飼ってる？',      rest:'you have a dog?',            ans:'Do',emoji:'🐕',hint:'have = 飼っている（行動）'},
+  {jp:'英語が好き？',        rest:'you like English?',          ans:'Do',emoji:'🔤',hint:'like = 好き（行動）'},
+  {jp:'スポーツをする？',    rest:'you do sports?',             ans:'Do',emoji:'🏅',hint:'do sports = スポーツをする（行動）'},
+  {jp:'朝ごはんを食べる？',  rest:'you eat breakfast?',         ans:'Do',emoji:'🥞',hint:'eat breakfast = 朝食を食べる（習慣）'},
+  {jp:'よく笑う？',          rest:'you laugh a lot?',           ans:'Do',emoji:'😂',hint:'laugh = 笑う（行動）'},
+  {jp:'宿題をする？',        rest:'you do your homework?',      ans:'Do',emoji:'✏️',hint:'do homework = 宿題をする（行動）'},
+  {jp:'早起きする？',        rest:'you wake up early?',         ans:'Do',emoji:'⏰',hint:'wake up = 起きる（行動）'},
+  {jp:'お茶を飲む？',        rest:'you drink tea?',             ans:'Do',emoji:'🍵',hint:'drink = 飲む（行動）'},
+  {jp:'牛乳を飲む？',        rest:'you drink milk?',            ans:'Do',emoji:'🥛',hint:'drink = 飲む（行動）'},
+  {jp:'水を飲む？',          rest:'you drink water?',           ans:'Do',emoji:'💧',hint:'drink water = 水を飲む（行動）'},
+  {jp:'電車で来る？',        rest:'you come by train?',         ans:'Do',emoji:'🚃',hint:'come by train = 電車で来る（行動）'},
+  {jp:'友達と遊ぶ？',        rest:'you play with friends?',     ans:'Do',emoji:'👫',hint:'play with = ～と遊ぶ（行動）'},
+  {jp:'夜遅く寝る？',        rest:'you sleep late?',            ans:'Do',emoji:'🌃',hint:'sleep late = 夜遅く寝る（習慣）'},
+  {jp:'ピアノを弾く？',      rest:'you play the piano?',        ans:'Do',emoji:'🎹',hint:'play the piano = ピアノを弾く（行動）'},
+  {jp:'泳ぐ？',              rest:'you swim?',                  ans:'Do',emoji:'🏊',hint:'swim = 泳ぐ（行動）'},
+  {jp:'バスケをする？',      rest:'you play basketball?',       ans:'Do',emoji:'🏀',hint:'play basketball = バスケをする（行動）'},
+  {jp:'ネコが好き？',        rest:'you like cats?',             ans:'Do',emoji:'🐱',hint:'like = 好き（行動）'},
+  {jp:'肉を食べる？',        rest:'you eat meat?',              ans:'Do',emoji:'🥩',hint:'eat meat = 肉を食べる（行動）'},
+  {jp:'野菜を食べる？',      rest:'you eat vegetables?',        ans:'Do',emoji:'🥦',hint:'eat vegetables = 野菜を食べる（行動）'},
+  {jp:'学校が好き？',        rest:'you like school?',           ans:'Do',emoji:'🏫',hint:'like school = 学校が好き（行動）'},
+  {jp:'よく外出する？',      rest:'you go out often?',          ans:'Do',emoji:'🚶',hint:'go out = 外出する（行動）'},
+  {jp:'写真を撮る？',        rest:'you take photos?',           ans:'Do',emoji:'📷',hint:'take photos = 写真を撮る（行動）'},
+  {jp:'音楽が好き？',        rest:'you like music?',            ans:'Do',emoji:'🎶',hint:'like music = 音楽が好き（行動）'},
+  {jp:'電話をよくする？',    rest:'you call often?',            ans:'Do',emoji:'📞',hint:'call = 電話する（行動）'},
+  {jp:'毎日勉強する？',      rest:'you study every day?',       ans:'Do',emoji:'🗒️',hint:'study every day = 毎日勉強する（習慣）'},
+  {jp:'よく旅行する？',      rest:'you travel often?',          ans:'Do',emoji:'🧳',hint:'travel = 旅行する（行動）'},
+  {jp:'料理が好き？',        rest:'you like cooking?',          ans:'Do',emoji:'👨‍🍳',hint:'like cooking = 料理が好き（行動）'},
+  {jp:'一人で勉強する？',    rest:'you study alone?',           ans:'Do',emoji:'🧑‍💻',hint:'study alone = 一人で勉強する（行動）'},
+  {jp:'バレーをする？',      rest:'you play volleyball?',       ans:'Do',emoji:'🏐',hint:'play volleyball = バレーをする（行動）'},
+  {jp:'スマホをよく使う？',  rest:'you use your phone a lot?',  ans:'Do',emoji:'📱',hint:'use your phone = スマホを使う（行動）'},
+  {jp:'歩いて学校へ行く？',  rest:'you walk to school?',        ans:'Do',emoji:'🚶',hint:'walk to school = 歩いて通う（行動）'},
+  {jp:'甘い物が好き？',      rest:'you like sweets?',           ans:'Do',emoji:'🍰',hint:'like sweets = 甘い物が好き（行動）'},
+  {jp:'英語を書く？',        rest:'you write in English?',      ans:'Do',emoji:'🖊️',hint:'write = 書く（行動）'},
+  {jp:'夜に本を読む？',      rest:'you read at night?',         ans:'Do',emoji:'🌙',hint:'read at night = 夜に読む（習慣）'},
+  {jp:'スポーツが好き？',    rest:'you like sports?',           ans:'Do',emoji:'🎽',hint:'like sports = スポーツが好き（行動）'},
+];
+
+let shuffled = [], idx = 0, correct = 0, wrong = 0;
+
+function shuffle(arr){return [...arr].sort(()=>Math.random()-.5);}
+
+function loadQuestion(){
+  const q = shuffled[idx];
+  const total = shuffled.length;
+  document.getElementById('qNum').textContent = `Q ${idx+1} / ${total}`;
+  document.getElementById('qEmoji').textContent = q.emoji;
+  document.getElementById('qJp').textContent = q.jp;
+  document.getElementById('qRest').innerHTML = `<code>___</code> ${q.rest}`;
+  document.getElementById('scoreCurrent').textContent = idx+1;
+  document.getElementById('progressBar').style.width = `${(idx/total)*100}%`;
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btnAre').disabled = false;
+  document.getElementById('btnDo').disabled = false;
+  const card = document.getElementById('card');
+  card.style.opacity = 0; card.style.transform = 'translateY(10px)';
+  setTimeout(()=>{
+    card.style.transition = 'opacity .25s,transform .25s';
+    card.style.opacity = 1; card.style.transform = 'none';
+  }, 20);
+}
+
+function answer(choice){
+  const q = shuffled[idx];
+  const isCorrect = choice === q.ans;
+  const card = document.getElementById('card');
+  const fb = document.getElementById('feedback');
+  document.getElementById('btnAre').disabled = true;
+  document.getElementById('btnDo').disabled = true;
+  if(isCorrect){
+    correct++;
+    document.getElementById('scoreCorrect').textContent = correct;
+    document.getElementById('fbIcon').textContent = '✅';
+    document.getElementById('fbText').textContent = '正解！ すごい！';
+    document.getElementById('fbAnswer').textContent = `${q.ans} ${q.rest}\n${q.hint}`;
+    fb.className = 'feedback correct show';
+    card.classList.add('pop'); setTimeout(()=>card.classList.remove('pop'),300);
+    document.getElementById(choice==='Are'?'btnAre':'btnDo').classList.add('correct-flash');
+  } else {
+    wrong++;
+    document.getElementById('scoreWrong').textContent = wrong;
+    document.getElementById('fbIcon').textContent = '❌';
+    document.getElementById('fbText').textContent = `不正解… 答えは「${q.ans}」！`;
+    document.getElementById('fbAnswer').textContent = `${q.ans} ${q.rest}\n${q.hint}`;
+    fb.className = 'feedback wrong show';
+    card.classList.add('shake'); setTimeout(()=>card.classList.remove('shake'),400);
+  }
+}
+
+function nextQuestion(){
+  idx++;
+  if(idx >= shuffled.length){ showResult(); } else { loadQuestion(); }
+}
+
+function showResult(){
+  document.getElementById('card').style.display = 'none';
+  document.getElementById('progressBar').style.width = '100%';
+  const r = document.getElementById('result');
+  r.style.display = 'flex';
+  const pct = correct / shuffled.length;
+  let rank, emoji;
+  if(pct===1)      {rank='完璧！ マスター級 🏆';          emoji='🎉';}
+  else if(pct>=.9) {rank='優秀！ もう少しで満点！';        emoji='😄';}
+  else if(pct>=.7) {rank='なかなか！ もう一息！';           emoji='😊';}
+  else if(pct>=.5) {rank='もう一息！ 練習を続けよう！';    emoji='💪';}
+  else             {rank='頑張れ！ 何度でも挑戦しよう！';  emoji='📚';}
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${shuffled.length}`;
+  document.getElementById('resultRank').textContent = rank;
+}
+
+function restart(){
+  correct=0; wrong=0; idx=0;
+  document.getElementById('scoreCorrect').textContent=0;
+  document.getElementById('scoreWrong').textContent=0;
+  document.getElementById('result').style.display='none';
+  document.getElementById('card').style.display='block';
+  const num = parseInt(document.getElementById('numSelect').value);
+  shuffled = shuffle(ALL_QUESTIONS).slice(0, Math.min(num, ALL_QUESTIONS.length));
+  document.getElementById('scoreTotal').textContent = shuffled.length;
+  loadQuestion();
+}
+
+(function(){
+  const num = parseInt(document.getElementById('numSelect').value);
+  shuffled = shuffle(ALL_QUESTIONS).slice(0, Math.min(num, ALL_QUESTIONS.length));
+  document.getElementById('scoreTotal').textContent = shuffled.length;
+  loadQuestion();
+})();
+</script>
+</body>
+</html>

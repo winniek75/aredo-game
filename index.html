@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Are / Do クイズゲーム</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --are: #e63946;
+    --do: #3a86ff;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #2b2d42;
+    --correct: #06d6a0;
+    --wrong: #ef233c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: 24px 16px 40px;
+    background-image:
+      radial-gradient(circle at 15% 15%, rgba(230,57,70,.07) 0%, transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(58,134,255,.07) 0%, transparent 45%);
+  }
+
+  /* ─── Header ─────────────────────────────────── */
+  .header { text-align: center; margin-bottom: 6px; }
+  h1 { font-family:'Nunito',sans-serif; font-size:clamp(1.4rem,4vw,2rem); color:var(--text); }
+  h1 span.are{color:var(--are);} h1 span.do{color:var(--do);}
+
+  .legend {
+    display:flex; gap:18px; justify-content:center; margin: 8px 0 0;
+    font-size:.82rem; color:#666; flex-wrap:wrap;
+  }
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-badge{
+    padding:3px 10px; border-radius:5px;
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:.8rem; color:white;
+  }
+  .legend-badge.are{background:var(--are);}
+  .legend-badge.do{background:var(--do);}
+
+  /* ─── Settings row ───────────────────────────── */
+  .settings-row {
+    display:flex; align-items:center; gap:10px; margin: 14px 0 10px;
+    font-size:.83rem; color:#888; font-weight:700; flex-wrap:wrap; justify-content:center;
+  }
+  .settings-row select {
+    padding:5px 12px; border-radius:99px; border:2px solid #dde;
+    font-family:'Noto Sans JP',sans-serif; font-size:.83rem; font-weight:700;
+    color:var(--text); background:white; cursor:pointer; outline:none;
+  }
+  .settings-row select:focus{border-color:var(--do);}
+
+  .export-btn {
+    padding:5px 14px; border-radius:99px; border:2px solid #dde;
+    font-family:'Noto Sans JP',sans-serif; font-size:.83rem; font-weight:700;
+    color:var(--text); background:white; cursor:pointer; transition:all .15s;
+  }
+  .export-btn:hover{background:var(--text);color:white;border-color:var(--text);}
+
+  /* ─── Progress ───────────────────────────────── */
+  .progress-wrap{width:min(560px,100%);height:6px;background:#dde;border-radius:99px;margin-bottom:12px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--are),var(--do));border-radius:99px;transition:width .4s ease;}
+
+  .score-row{
+    display:flex;gap:16px;margin-bottom:14px;
+    font-size:.85rem;font-weight:700;color:#999;
+    align-items:center;
+  }
+  .score-row span{display:flex;align-items:center;gap:4px;}
+  .score-row .num{font-size:1.1rem;color:var(--text);}
+
+  /* ─── Card ───────────────────────────────────── */
+  .card {
+    background:var(--card); border-radius:22px;
+    width:min(560px,100%);
+    box-shadow:0 6px 32px rgba(0,0,0,.09);
+    position:relative; overflow:hidden;
+  }
+  .card.shake{animation:shake .4s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .card.pop{animation:pop .3s ease;}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.025)}100%{transform:scale(1)}}
+
+  /* ─── Photo area ─────────────────────────────── */
+  .photo-area {
+    width:100%; height:200px;
+    background: linear-gradient(135deg,#f0f2f8,#e8ecf4);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; border-radius:22px 22px 0 0;
+    position:relative;
+  }
+  .photo-area img {
+    width:100%; height:100%; object-fit:cover;
+    display:none;
+    border-radius:22px 22px 0 0;
+  }
+  .photo-area img.loaded { display:block; }
+  .photo-area .no-photo {
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    color:#bcc; font-size:.8rem; font-weight:700; letter-spacing:.5px;
+  }
+  .photo-area .no-photo .icon { font-size:2.5rem; opacity:.4; }
+  .photo-area .q-badge {
+    position:absolute; top:10px; left:12px;
+    background:rgba(255,255,255,.85); backdrop-filter:blur(4px);
+    border-radius:99px; padding:3px 12px;
+    font-size:.75rem; font-weight:700; color:var(--text); letter-spacing:.5px;
+  }
+
+  /* ─── Card body ──────────────────────────────── */
+  .card-body { padding:24px 28px 22px; }
+
+  .question-jp {
+    font-size:clamp(1.5rem,5vw,2.1rem); font-weight:900;
+    color:var(--text); margin-bottom:6px; line-height:1.2;
+  }
+  .question-rest {
+    font-size:clamp(.95rem,3vw,1.25rem); color:#aab;
+    margin-bottom:22px; font-weight:400;
+  }
+  .question-rest code {
+    font-family:'Nunito',sans-serif; font-weight:700; color:#ccd; font-size:1.1em;
+  }
+
+  /* ─── Buttons ────────────────────────────────── */
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:11px; margin-bottom:10px;}
+  .btn {
+    padding:15px 8px; border:none; border-radius:13px; cursor:pointer;
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:1.45rem; color:white;
+    transition:transform .12s,box-shadow .12s;
+    box-shadow:0 4px 14px rgba(0,0,0,.13);
+    line-height:1;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.18);}
+  .btn:disabled{opacity:.45;cursor:default;transform:none;}
+  .btn-are{background:var(--are);} .btn-are:hover{background:#d62839;}
+  .btn-do{background:var(--do);}   .btn-do:hover{background:#2971e6;}
+  .btn .sub{display:block;font-size:.58rem;font-family:'Noto Sans JP',sans-serif;font-weight:700;opacity:.85;margin-top:3px;letter-spacing:0;}
+  .btn.correct-flash{animation:correctFlash .5s ease forwards;}
+  @keyframes correctFlash{0%{box-shadow:0 0 0 0 var(--correct);}50%{box-shadow:0 0 0 10px rgba(6,214,160,.3);transform:scale(1.05);}100%{box-shadow:0 4px 14px rgba(0,0,0,.13);transform:scale(1);}}
+
+  /* ─── Nav row (back button) ──────────────────── */
+  .nav-row{
+    display:flex; justify-content:flex-start; padding:0 0 14px 2px;
+  }
+  .back-btn{
+    display:flex; align-items:center; gap:5px;
+    background:none; border:2px solid #dde; border-radius:99px;
+    padding:5px 14px; cursor:pointer; font-size:.8rem; font-weight:700;
+    color:#aab; font-family:'Noto Sans JP',sans-serif;
+    transition:all .15s;
+  }
+  .back-btn:hover{border-color:#aab;color:var(--text);}
+  .back-btn:disabled{opacity:.3;cursor:default;}
+
+  /* ─── Feedback overlay ───────────────────────── */
+  .feedback{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; border-radius:22px;
+    opacity:0; pointer-events:none; transition:opacity .2s;
+    padding:20px;
+  }
+  .feedback.show{opacity:1;pointer-events:all;}
+  .feedback.correct{background:rgba(6,214,160,.18);}
+  .feedback.wrong{background:rgba(239,35,60,.12);}
+  .feedback .fb-icon{font-size:3.5rem;margin-bottom:8px;}
+  .feedback .fb-text{font-size:1.1rem;font-weight:900;color:var(--text);}
+  .feedback .fb-answer{
+    margin-top:8px;font-size:.88rem;color:#555;text-align:center;
+    line-height:1.7; background:rgba(255,255,255,.7);
+    padding:8px 16px; border-radius:10px; max-width:340px;
+  }
+  .feedback .fb-ans-en { font-family:'Nunito',sans-serif; font-weight:700; font-size:1rem; color:var(--text); }
+  .feedback .fb-hint { font-size:.8rem; color:#777; }
+  .feedback .fb-btn{
+    margin-top:16px; padding:11px 30px; border-radius:99px; border:none;
+    background:var(--text); color:white; font-family:'Nunito',sans-serif;
+    font-weight:700; font-size:.95rem; cursor:pointer; transition:transform .1s;
+  }
+  .feedback .fb-btn:hover{transform:scale(1.05);}
+
+  /* ─── Result screen ──────────────────────────── */
+  #result{
+    display:none; flex-direction:column; align-items:center; text-align:center;
+    gap:14px; padding:44px 30px; background:white; border-radius:22px;
+    box-shadow:0 6px 32px rgba(0,0,0,.09); width:min(560px,100%);
+    animation:fadeIn .4s ease;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  #result h2{font-family:'Nunito',sans-serif;font-size:1.8rem;color:var(--text);}
+  .big-score{
+    font-family:'Nunito',sans-serif;font-size:5.5rem;font-weight:900;line-height:1;
+    background:linear-gradient(135deg,var(--are),var(--do));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  #result .rank{font-size:1.05rem;color:#888;}
+  .restart-btn{
+    padding:14px 40px; border-radius:99px; border:none;
+    background:linear-gradient(135deg,var(--are),var(--do)); color:white;
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:1.1rem;
+    cursor:pointer; transition:transform .15s;
+    box-shadow:0 4px 16px rgba(58,134,255,.3);
+  }
+  .restart-btn:hover{transform:scale(1.05);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="are">Are</span> vs <span class="do">Do</span> クイズ 🎯</h1>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-badge are">Are</div>be動詞（〜です）</div>
+    <div class="legend-item"><div class="legend-badge do">Do</div>一般動詞（〜します）</div>
+  </div>
+</div>
+
+<div class="settings-row">
+  出題数：
+  <select id="numSelect">
+    <option value="10">10問</option>
+    <option value="20" selected>20問</option>
+    <option value="30">30問</option>
+    <option value="50">50問</option>
+    <option value="100">全100問</option>
+  </select>
+  <button class="export-btn" onclick="exportCSV()">📥 問題一覧をExcel出力</button>
+</div>
+
+<div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
+<div class="score-row">
+  <span>✅ <span class="num" id="scoreCorrect">0</span></span>
+  <span>❌ <span class="num" id="scoreWrong">0</span></span>
+  <span>📝 <span class="num" id="scoreCurrent">1</span> / <span id="scoreTotal">20</span></span>
+</div>
+
+<div class="card" id="card">
+  <!-- Photo area -->
+  <div class="photo-area" id="photoArea">
+    <div class="q-badge" id="qBadge">Q 1 / 20</div>
+    <img id="qPhoto" alt="question image" onload="this.classList.add('loaded')" onerror="this.style.display='none'">
+    <div class="no-photo" id="noPhoto">
+      <div class="icon">🖼️</div>
+      <div>images / q<span id="noPhotoNum">001</span>.jpg</div>
+    </div>
+  </div>
+
+  <!-- Card body -->
+  <div class="card-body">
+    <div class="nav-row">
+      <button class="back-btn" id="backBtn" onclick="goBack()" disabled>← 前の問題</button>
+    </div>
+    <div class="question-jp" id="qJp"></div>
+    <div class="question-rest" id="qRest"></div>
+    <div class="btn-row">
+      <button class="btn btn-are" id="btnAre" onclick="answer('Are')">
+        Are<span class="sub">be動詞（〜です）</span>
+      </button>
+      <button class="btn btn-do" id="btnDo" onclick="answer('Do')">
+        Do<span class="sub">一般動詞（〜します）</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback overlay -->
+  <div class="feedback" id="feedback">
+    <div class="fb-icon" id="fbIcon">✅</div>
+    <div class="fb-text" id="fbText">正解！</div>
+    <div class="fb-answer">
+      <div class="fb-ans-en" id="fbAnsEn"></div>
+      <div class="fb-hint" id="fbHint"></div>
+    </div>
+    <button class="fb-btn" onclick="nextQuestion()">次の問題 →</button>
+  </div>
+</div>
+
+<!-- Result screen -->
+<div id="result">
+  <div style="font-size:3rem" id="resultEmoji">🎉</div>
+  <h2>結果発表！</h2>
+  <div class="big-score" id="resultScore">20 / 20</div>
+  <div class="rank" id="resultRank">完璧！マスター級！</div>
+  <button class="restart-btn" onclick="restart()">もう一度チャレンジ 🔄</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// 問題データ（100問）
+// img: 'images/' フォルダに入れる画像ファイル名
+// ─────────────────────────────────────────────────────────────
+const ALL_QUESTIONS = [
+  // ── ARE（be動詞・形容詞・状態・属性）────────────────────────
+  {no:'001',jp:'いそがしい？',        rest:'you busy?',                  ans:'Are',emoji:'😰',hint:'busy = 忙しい（状態）',           img:'q001.jpg'},
+  {no:'002',jp:'眠い？',              rest:'you sleepy?',                ans:'Are',emoji:'😴',hint:'sleepy = 眠い（状態）',           img:'q002.jpg'},
+  {no:'003',jp:'元気？',              rest:'you OK?',                    ans:'Are',emoji:'😊',hint:'OK = 元気な（状態）',             img:'q003.jpg'},
+  {no:'004',jp:'怒ってる？',          rest:'you angry?',                 ans:'Are',emoji:'😡',hint:'angry = 怒っている（状態）',       img:'q004.jpg'},
+  {no:'005',jp:'疲れた？',            rest:'you tired?',                 ans:'Are',emoji:'😩',hint:'tired = 疲れた（状態）',           img:'q005.jpg'},
+  {no:'006',jp:'幸せ？',              rest:'you happy?',                 ans:'Are',emoji:'😁',hint:'happy = 幸せ（状態）',             img:'q006.jpg'},
+  {no:'007',jp:'悲しい？',            rest:'you sad?',                   ans:'Are',emoji:'😢',hint:'sad = 悲しい（状態）',             img:'q007.jpg'},
+  {no:'008',jp:'緊張してる？',        rest:'you nervous?',               ans:'Are',emoji:'😬',hint:'nervous = 緊張している（状態）',   img:'q008.jpg'},
+  {no:'009',jp:'準備OK？',            rest:'you ready?',                 ans:'Are',emoji:'🙌',hint:'ready = 準備できた（状態）',       img:'q009.jpg'},
+  {no:'010',jp:'お腹すいた？',        rest:'you hungry?',                ans:'Are',emoji:'🍽️',hint:'hungry = 空腹（状態）',           img:'q010.jpg'},
+  {no:'011',jp:'のどかわいた？',      rest:'you thirsty?',               ans:'Are',emoji:'💧',hint:'thirsty = のどが渇いた（状態）',   img:'q011.jpg'},
+  {no:'012',jp:'寒い？',              rest:'you cold?',                  ans:'Are',emoji:'🥶',hint:'cold = 寒い（状態）',             img:'q012.jpg'},
+  {no:'013',jp:'暑い？',              rest:'you hot?',                   ans:'Are',emoji:'🥵',hint:'hot = 暑い（状態）',               img:'q013.jpg'},
+  {no:'014',jp:'大丈夫？',            rest:'you all right?',             ans:'Are',emoji:'🤔',hint:'all right = 大丈夫（状態）',       img:'q014.jpg'},
+  {no:'015',jp:'病気？',              rest:'you sick?',                  ans:'Are',emoji:'🤒',hint:'sick = 病気（状態）',             img:'q015.jpg'},
+  {no:'016',jp:'びっくりした？',      rest:'you surprised?',             ans:'Are',emoji:'😲',hint:'surprised = 驚いた（状態）',       img:'q016.jpg'},
+  {no:'017',jp:'怖い？',              rest:'you scared?',                ans:'Are',emoji:'😱',hint:'scared = 怖い（状態）',           img:'q017.jpg'},
+  {no:'018',jp:'退屈？',              rest:'you bored?',                 ans:'Are',emoji:'🥱',hint:'bored = 退屈（状態）',             img:'q018.jpg'},
+  {no:'019',jp:'遅刻してる？',        rest:'you late?',                  ans:'Are',emoji:'⏰',hint:'late = 遅刻している（状態）',       img:'q019.jpg'},
+  {no:'020',jp:'早い？',              rest:'you early?',                 ans:'Are',emoji:'🌅',hint:'early = 早い（状態）',             img:'q020.jpg'},
+  {no:'021',jp:'一人？',              rest:'you alone?',                 ans:'Are',emoji:'🧍',hint:'alone = 一人の（状態）',           img:'q021.jpg'},
+  {no:'022',jp:'今ひま？',            rest:'you free now?',              ans:'Are',emoji:'🗓️',hint:'free = 暇な（状態）',            img:'q022.jpg'},
+  {no:'023',jp:'うれしい？',          rest:'you glad?',                  ans:'Are',emoji:'😄',hint:'glad = うれしい（状態）',           img:'q023.jpg'},
+  {no:'024',jp:'背が高い？',          rest:'you tall?',                  ans:'Are',emoji:'📏',hint:'tall = 背が高い（状態）',           img:'q024.jpg'},
+  {no:'025',jp:'強い？',              rest:'you strong?',                ans:'Are',emoji:'💪',hint:'strong = 強い（状態）',           img:'q025.jpg'},
+  {no:'026',jp:'正しい？',            rest:'you right?',                 ans:'Are',emoji:'✔️',hint:'right = 正しい（状態）',          img:'q026.jpg'},
+  {no:'027',jp:'困ってる？',          rest:'you lost?',                  ans:'Are',emoji:'🗺️',hint:'lost = 迷っている（状態）',       img:'q027.jpg'},
+  {no:'028',jp:'先生？',              rest:'you a teacher?',             ans:'Are',emoji:'🍎',hint:'a teacher = 先生（属性）',         img:'q028.jpg'},
+  {no:'029',jp:'学生？',              rest:'you a student?',             ans:'Are',emoji:'📖',hint:'a student = 学生（属性）',         img:'q029.jpg'},
+  {no:'030',jp:'日本人？',            rest:'you Japanese?',              ans:'Are',emoji:'🇯🇵',hint:'Japanese = 日本人（属性）',      img:'q030.jpg'},
+  {no:'031',jp:'アメリカ人？',        rest:'you American?',              ans:'Are',emoji:'🇺🇸',hint:'American = アメリカ人（属性）', img:'q031.jpg'},
+  {no:'032',jp:'今、家にいる？',      rest:'you at home now?',           ans:'Are',emoji:'🏠',hint:'at home = 家にいる（場所・状態）', img:'q032.jpg'},
+  {no:'033',jp:'今学校にいる？',      rest:'you at school now?',         ans:'Are',emoji:'🏫',hint:'at school = 学校にいる（場所）',   img:'q033.jpg'},
+  {no:'034',jp:'今外にいる？',        rest:'you outside now?',           ans:'Are',emoji:'🌳',hint:'outside = 外にいる（場所）',       img:'q034.jpg'},
+  {no:'035',jp:'仕事中？',            rest:'you at work?',               ans:'Are',emoji:'💼',hint:'at work = 仕事中（状態）',         img:'q035.jpg'},
+  {no:'036',jp:'旅行中？',            rest:'you on a trip?',             ans:'Are',emoji:'✈️',hint:'on a trip = 旅行中（状態）',      img:'q036.jpg'},
+  {no:'037',jp:'結婚してる？',        rest:'you married?',               ans:'Are',emoji:'💍',hint:'married = 結婚している（状態）',   img:'q037.jpg'},
+  {no:'038',jp:'忙しすぎる？',        rest:'you too busy?',              ans:'Are',emoji:'😵',hint:'too busy = 忙しすぎる（状態）',   img:'q038.jpg'},
+  {no:'039',jp:'チームにいる？',      rest:'you on the team?',           ans:'Are',emoji:'🏅',hint:'on the team = チームにいる（状態）',img:'q039.jpg'},
+  {no:'040',jp:'一番？',              rest:'you the best?',              ans:'Are',emoji:'🥇',hint:'the best = 一番（状態）',           img:'q040.jpg'},
+  {no:'041',jp:'背が低い？',          rest:'you short?',                 ans:'Are',emoji:'👶',hint:'short = 背が低い（状態）',         img:'q041.jpg'},
+  {no:'042',jp:'若い？',              rest:'you young?',                 ans:'Are',emoji:'🧒',hint:'young = 若い（状態）',             img:'q042.jpg'},
+  {no:'043',jp:'頭がいい？',          rest:'you smart?',                 ans:'Are',emoji:'🧠',hint:'smart = 頭がいい（状態）',         img:'q043.jpg'},
+  {no:'044',jp:'安全？',              rest:'you safe?',                  ans:'Are',emoji:'🛡️',hint:'safe = 安全（状態）',             img:'q044.jpg'},
+  {no:'045',jp:'有名？',              rest:'you famous?',                ans:'Are',emoji:'⭐',hint:'famous = 有名（状態）',             img:'q045.jpg'},
+  {no:'046',jp:'お金持ち？',          rest:'you rich?',                  ans:'Are',emoji:'💰',hint:'rich = お金持ち（状態）',           img:'q046.jpg'},
+  {no:'047',jp:'真面目？',            rest:'you serious?',               ans:'Are',emoji:'🧐',hint:'serious = 真面目（状態）',         img:'q047.jpg'},
+  {no:'048',jp:'恥ずかしい？',        rest:'you embarrassed?',           ans:'Are',emoji:'😳',hint:'embarrassed = 恥ずかしい（状態）', img:'q048.jpg'},
+  {no:'049',jp:'満足してる？',        rest:'you satisfied?',             ans:'Are',emoji:'😌',hint:'satisfied = 満足している（状態）', img:'q049.jpg'},
+  {no:'050',jp:'友達？',              rest:'you friends?',               ans:'Are',emoji:'🤝',hint:'friends = 友達（属性）',           img:'q050.jpg'},
+
+  // ── DO（一般動詞・行動・習慣）────────────────────────────────
+  {no:'051',jp:'コーヒー好き？',      rest:'you like coffee?',           ans:'Do',emoji:'☕',hint:'like = 好き（習慣）',               img:'q051.jpg'},
+  {no:'052',jp:'英語を勉強する？',    rest:'you study English?',         ans:'Do',emoji:'📚',hint:'study = 勉強する（行動）',           img:'q052.jpg'},
+  {no:'053',jp:'音楽を聞く？',        rest:'you listen to music?',       ans:'Do',emoji:'🎵',hint:'listen to = 聞く（行動）',           img:'q053.jpg'},
+  {no:'054',jp:'サッカーをする？',    rest:'you play soccer?',           ans:'Do',emoji:'⚽',hint:'play = する（行動）',               img:'q054.jpg'},
+  {no:'055',jp:'ゲームをする？',      rest:'you play games?',            ans:'Do',emoji:'🎮',hint:'play = する（行動）',               img:'q055.jpg'},
+  {no:'056',jp:'日本語を話す？',      rest:'you speak Japanese?',        ans:'Do',emoji:'🗣️',hint:'speak = 話す（行動）',             img:'q056.jpg'},
+  {no:'057',jp:'犬が好き？',          rest:'you like dogs?',             ans:'Do',emoji:'🐶',hint:'like = 好き（習慣）',               img:'q057.jpg'},
+  {no:'058',jp:'ご飯を食べる？',      rest:'you eat rice?',              ans:'Do',emoji:'🍚',hint:'eat = 食べる（行動）',               img:'q058.jpg'},
+  {no:'059',jp:'毎日運動する？',      rest:'you exercise every day?',    ans:'Do',emoji:'🏃',hint:'exercise = 運動する（習慣）',         img:'q059.jpg'},
+  {no:'060',jp:'映画を見る？',        rest:'you watch movies?',          ans:'Do',emoji:'🎬',hint:'watch = 見る（行動）',               img:'q060.jpg'},
+  {no:'061',jp:'テレビを見る？',      rest:'you watch TV?',              ans:'Do',emoji:'📺',hint:'watch = 見る（行動）',               img:'q061.jpg'},
+  {no:'062',jp:'歌を歌う？',          rest:'you sing songs?',            ans:'Do',emoji:'🎤',hint:'sing = 歌う（行動）',               img:'q062.jpg'},
+  {no:'063',jp:'本を読む？',          rest:'you read books?',            ans:'Do',emoji:'📖',hint:'read = 読む（行動）',               img:'q063.jpg'},
+  {no:'064',jp:'自転車に乗る？',      rest:'you ride a bike?',           ans:'Do',emoji:'🚲',hint:'ride = 乗る（行動）',               img:'q064.jpg'},
+  {no:'065',jp:'バスで来る？',        rest:'you come by bus?',           ans:'Do',emoji:'🚌',hint:'come by = ～で来る（行動）',         img:'q065.jpg'},
+  {no:'066',jp:'料理する？',          rest:'you cook?',                  ans:'Do',emoji:'🍳',hint:'cook = 料理する（行動）',             img:'q066.jpg'},
+  {no:'067',jp:'犬を飼ってる？',      rest:'you have a dog?',            ans:'Do',emoji:'🐕',hint:'have = 飼っている（行動）',           img:'q067.jpg'},
+  {no:'068',jp:'英語が好き？',        rest:'you like English?',          ans:'Do',emoji:'🔤',hint:'like = 好き（習慣）',               img:'q068.jpg'},
+  {no:'069',jp:'スポーツをする？',    rest:'you do sports?',             ans:'Do',emoji:'🏅',hint:'do sports = スポーツをする（行動）', img:'q069.jpg'},
+  {no:'070',jp:'朝ごはんを食べる？',  rest:'you eat breakfast?',         ans:'Do',emoji:'🥞',hint:'eat breakfast = 朝食を食べる（習慣）',img:'q070.jpg'},
+  {no:'071',jp:'よく笑う？',          rest:'you laugh a lot?',           ans:'Do',emoji:'😂',hint:'laugh = 笑う（行動）',               img:'q071.jpg'},
+  {no:'072',jp:'宿題をする？',        rest:'you do your homework?',      ans:'Do',emoji:'✏️',hint:'do homework = 宿題をする（行動）',  img:'q072.jpg'},
+  {no:'073',jp:'早起きする？',        rest:'you wake up early?',         ans:'Do',emoji:'⏰',hint:'wake up = 起きる（行動）',           img:'q073.jpg'},
+  {no:'074',jp:'お茶を飲む？',        rest:'you drink tea?',             ans:'Do',emoji:'🍵',hint:'drink = 飲む（行動）',               img:'q074.jpg'},
+  {no:'075',jp:'牛乳を飲む？',        rest:'you drink milk?',            ans:'Do',emoji:'🥛',hint:'drink = 飲む（行動）',               img:'q075.jpg'},
+  {no:'076',jp:'水を飲む？',          rest:'you drink water?',           ans:'Do',emoji:'💧',hint:'drink water = 水を飲む（行動）',     img:'q076.jpg'},
+  {no:'077',jp:'電車で来る？',        rest:'you come by train?',         ans:'Do',emoji:'🚃',hint:'come by train = 電車で来る（行動）', img:'q077.jpg'},
+  {no:'078',jp:'友達と遊ぶ？',        rest:'you play with friends?',     ans:'Do',emoji:'👫',hint:'play with = ～と遊ぶ（行動）',       img:'q078.jpg'},
+  {no:'079',jp:'夜遅く寝る？',        rest:'you sleep late?',            ans:'Do',emoji:'🌃',hint:'sleep late = 夜遅く寝る（習慣）',   img:'q079.jpg'},
+  {no:'080',jp:'ピアノを弾く？',      rest:'you play the piano?',        ans:'Do',emoji:'🎹',hint:'play the piano = ピアノを弾く（行動）',img:'q080.jpg'},
+  {no:'081',jp:'泳ぐ？',              rest:'you swim?',                  ans:'Do',emoji:'🏊',hint:'swim = 泳ぐ（行動）',               img:'q081.jpg'},
+  {no:'082',jp:'バスケをする？',      rest:'you play basketball?',       ans:'Do',emoji:'🏀',hint:'play basketball = バスケをする（行動）',img:'q082.jpg'},
+  {no:'083',jp:'ネコが好き？',        rest:'you like cats?',             ans:'Do',emoji:'🐱',hint:'like = 好き（習慣）',               img:'q083.jpg'},
+  {no:'084',jp:'肉を食べる？',        rest:'you eat meat?',              ans:'Do',emoji:'🥩',hint:'eat meat = 肉を食べる（行動）',       img:'q084.jpg'},
+  {no:'085',jp:'野菜を食べる？',      rest:'you eat vegetables?',        ans:'Do',emoji:'🥦',hint:'eat vegetables = 野菜を食べる（行動）',img:'q085.jpg'},
+  {no:'086',jp:'学校が好き？',        rest:'you like school?',           ans:'Do',emoji:'🏫',hint:'like school = 学校が好き（習慣）',   img:'q086.jpg'},
+  {no:'087',jp:'よく外出する？',      rest:'you go out often?',          ans:'Do',emoji:'🚶',hint:'go out = 外出する（行動）',           img:'q087.jpg'},
+  {no:'088',jp:'写真を撮る？',        rest:'you take photos?',           ans:'Do',emoji:'📷',hint:'take photos = 写真を撮る（行動）',   img:'q088.jpg'},
+  {no:'089',jp:'音楽が好き？',        rest:'you like music?',            ans:'Do',emoji:'🎶',hint:'like music = 音楽が好き（習慣）',     img:'q089.jpg'},
+  {no:'090',jp:'電話をよくする？',    rest:'you call often?',            ans:'Do',emoji:'📞',hint:'call = 電話する（行動）',             img:'q090.jpg'},
+  {no:'091',jp:'毎日勉強する？',      rest:'you study every day?',       ans:'Do',emoji:'🗒️',hint:'study every day = 毎日勉強する（習慣）',img:'q091.jpg'},
+  {no:'092',jp:'よく旅行する？',      rest:'you travel often?',          ans:'Do',emoji:'🧳',hint:'travel = 旅行する（行動）',           img:'q092.jpg'},
+  {no:'093',jp:'料理が好き？',        rest:'you like cooking?',          ans:'Do',emoji:'👨‍🍳',hint:'like cooking = 料理が好き（習慣）',img:'q093.jpg'},
+  {no:'094',jp:'一人で勉強する？',    rest:'you study alone?',           ans:'Do',emoji:'🧑‍💻',hint:'study alone = 一人で勉強する（行動）',img:'q094.jpg'},
+  {no:'095',jp:'バレーをする？',      rest:'you play volleyball?',       ans:'Do',emoji:'🏐',hint:'play volleyball = バレーをする（行動）',img:'q095.jpg'},
+  {no:'096',jp:'スマホをよく使う？',  rest:'you use your phone a lot?',  ans:'Do',emoji:'📱',hint:'use your phone = スマホを使う（行動）',img:'q096.jpg'},
+  {no:'097',jp:'歩いて学校へ行く？',  rest:'you walk to school?',        ans:'Do',emoji:'🚶',hint:'walk to school = 歩いて通う（行動）', img:'q097.jpg'},
+  {no:'098',jp:'甘い物が好き？',      rest:'you like sweets?',           ans:'Do',emoji:'🍰',hint:'like sweets = 甘い物が好き（習慣）',  img:'q098.jpg'},
+  {no:'099',jp:'英語を書く？',        rest:'you write in English?',      ans:'Do',emoji:'🖊️',hint:'write = 書く（行動）',             img:'q099.jpg'},
+  {no:'100',jp:'スポーツが好き？',    rest:'you like sports?',           ans:'Do',emoji:'🎽',hint:'like sports = スポーツが好き（習慣）',img:'q100.jpg'},
+];
+
+// ─────────────────────────────────────────────────────────────
+// Game state
+// ─────────────────────────────────────────────────────────────
+let shuffled = [];
+let idx = 0;
+let correct = 0;
+let wrong = 0;
+let history = []; // {idx, answered, wasCorrect}
+
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+
+function pad(n){ return String(n).padStart(3,'0'); }
+
+function loadQuestion(){
+  const q = shuffled[idx];
+  const total = shuffled.length;
+  const qNum = `Q ${idx+1} / ${total}`;
+
+  document.getElementById('qBadge').textContent = qNum;
+  document.getElementById('noPhotoNum').textContent = pad(parseInt(q.no));
+
+  // Photo
+  const img = document.getElementById('qPhoto');
+  const noPhoto = document.getElementById('noPhoto');
+  img.classList.remove('loaded');
+  img.style.display = '';
+  noPhoto.style.display = 'flex';
+  img.src = 'images/' + q.img;
+  img.onload = () => { img.classList.add('loaded'); noPhoto.style.display = 'none'; };
+  img.onerror = () => { img.style.display = 'none'; noPhoto.style.display = 'flex'; };
+
+  document.getElementById('qJp').textContent = q.jp;
+  document.getElementById('qRest').innerHTML = `<code>___</code> ${q.rest}`;
+  document.getElementById('scoreCurrent').textContent = idx+1;
+  document.getElementById('progressBar').style.width = `${(idx/total)*100}%`;
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btnAre').disabled = false;
+  document.getElementById('btnDo').disabled = false;
+  document.getElementById('backBtn').disabled = (idx === 0);
+
+  // Animate card in
+  const card = document.getElementById('card');
+  card.style.opacity = 0;
+  card.style.transform = 'translateY(10px)';
+  setTimeout(()=>{
+    card.style.transition = 'opacity .25s,transform .25s';
+    card.style.opacity = 1;
+    card.style.transform = 'none';
+  }, 20);
+}
+
+function answer(choice){
+  const q = shuffled[idx];
+  const isCorrect = choice === q.ans;
+  const card = document.getElementById('card');
+  const fb = document.getElementById('feedback');
+
+  document.getElementById('btnAre').disabled = true;
+  document.getElementById('btnDo').disabled = true;
+
+  history[idx] = { answered: choice, wasCorrect: isCorrect };
+
+  if(isCorrect){
+    correct++;
+    document.getElementById('scoreCorrect').textContent = correct;
+    document.getElementById('fbIcon').textContent = '✅';
+    document.getElementById('fbText').textContent = '正解！ すごい！';
+    document.getElementById('fbAnsEn').textContent = `${q.ans} ${q.rest}`;
+    document.getElementById('fbHint').textContent = q.hint;
+    fb.className = 'feedback correct show';
+    card.classList.add('pop'); setTimeout(()=>card.classList.remove('pop'),300);
+    document.getElementById(choice==='Are'?'btnAre':'btnDo').classList.add('correct-flash');
+  } else {
+    wrong++;
+    document.getElementById('scoreWrong').textContent = wrong;
+    document.getElementById('fbIcon').textContent = '❌';
+    document.getElementById('fbText').textContent = `不正解… 答えは「${q.ans}」！`;
+    document.getElementById('fbAnsEn').textContent = `${q.ans} ${q.rest}`;
+    document.getElementById('fbHint').textContent = q.hint;
+    fb.className = 'feedback wrong show';
+    card.classList.add('shake'); setTimeout(()=>card.classList.remove('shake'),400);
+  }
+}
+
+function nextQuestion(){
+  idx++;
+  if(idx >= shuffled.length){ showResult(); } else { loadQuestion(); }
+}
+
+function goBack(){
+  if(idx === 0) return;
+  // Undo score of current idx (if already answered)
+  if(history[idx]){
+    if(history[idx].wasCorrect){ correct--; document.getElementById('scoreCorrect').textContent=correct; }
+    else { wrong--; document.getElementById('scoreWrong').textContent=wrong; }
+    history[idx] = null;
+  }
+  // Undo score of prev idx (if already answered, we're revisiting)
+  if(history[idx-1]){
+    if(history[idx-1].wasCorrect){ correct--; document.getElementById('scoreCorrect').textContent=correct; }
+    else { wrong--; document.getElementById('scoreWrong').textContent=wrong; }
+    history[idx-1] = null;
+  }
+  idx--;
+  loadQuestion();
+}
+
+function showResult(){
+  document.getElementById('card').style.display = 'none';
+  document.getElementById('progressBar').style.width = '100%';
+  const r = document.getElementById('result');
+  r.style.display = 'flex';
+  const pct = correct / shuffled.length;
+  let rank, emoji;
+  if(pct===1)      {rank='完璧！ マスター級 🏆';          emoji='🎉';}
+  else if(pct>=.9) {rank='優秀！ もう少しで満点！';        emoji='😄';}
+  else if(pct>=.7) {rank='なかなか！ もう一息！';          emoji='😊';}
+  else if(pct>=.5) {rank='もう一息！ 練習を続けよう！';    emoji='💪';}
+  else             {rank='頑張れ！ 何度でも挑戦しよう！';  emoji='📚';}
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${shuffled.length}`;
+  document.getElementById('resultRank').textContent = rank;
+}
+
+function restart(){
+  correct=0; wrong=0; idx=0; history=[];
+  document.getElementById('scoreCorrect').textContent=0;
+  document.getElementById('scoreWrong').textContent=0;
+  document.getElementById('result').style.display='none';
+  document.getElementById('card').style.display='block';
+  const num = parseInt(document.getElementById('numSelect').value);
+  shuffled = shuffle(ALL_QUESTIONS).slice(0, Math.min(num, ALL_QUESTIONS.length));
+  document.getElementById('scoreTotal').textContent = shuffled.length;
+  loadQuestion();
+}
+
+// ─────────────────────────────────────────────────────────────
+// CSV export（Excelで開ける）
+// ─────────────────────────────────────────────────────────────
+function exportCSV(){
+  const BOM = '\uFEFF'; // Excel用BOM
+  const header = ['No','日本語','英語（残り部分）','答え（Are/Do）','完全な英語文','ヒント','画像ファイル名'];
+  const rows = ALL_QUESTIONS.map(q => [
+    q.no,
+    q.jp,
+    q.rest,
+    q.ans,
+    `${q.ans} ${q.rest}`,
+    q.hint,
+    q.img
+  ]);
+  const csv = BOM + [header, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(','))
+    .join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'are_do_questions.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
+(function(){
+  const num = parseInt(document.getElementById('numSelect').value);
+  shuffled = shuffle(ALL_QUESTIONS).slice(0, Math.min(num, ALL_QUESTIONS.length));
+  document.getElementById('scoreTotal').textContent = shuffled.length;
+  loadQuestion();
+})();
+</script>
+</body>
+</html>
