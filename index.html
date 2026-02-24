@@ -148,17 +148,19 @@
 
   /* ─── Nav row (back button) ──────────────────── */
   .nav-row{
-    display:flex; justify-content:flex-start; padding:0 0 14px 2px;
+    display:flex; justify-content:flex-start;
+    width:min(560px,100%); margin-bottom:8px;
   }
   .back-btn{
     display:flex; align-items:center; gap:5px;
-    background:none; border:2px solid #dde; border-radius:99px;
-    padding:5px 14px; cursor:pointer; font-size:.8rem; font-weight:700;
-    color:#aab; font-family:'Noto Sans JP',sans-serif;
+    background:white; border:2px solid #dde; border-radius:99px;
+    padding:6px 16px; cursor:pointer; font-size:.82rem; font-weight:700;
+    color:#99a; font-family:'Noto Sans JP',sans-serif;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
     transition:all .15s;
   }
-  .back-btn:hover{border-color:#aab;color:var(--text);}
-  .back-btn:disabled{opacity:.3;cursor:default;}
+  .back-btn:hover{border-color:#aab;color:var(--text);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+  .back-btn:disabled{opacity:.25;cursor:default;}
 
   /* ─── Feedback overlay ───────────────────────── */
   .feedback{
@@ -216,8 +218,8 @@
 <div class="header">
   <h1><span class="are">Are</span> vs <span class="do">Do</span> クイズ 🎯</h1>
   <div class="legend">
-    <div class="legend-item"><div class="legend-badge are">Are</div>be動詞（〜です）</div>
-    <div class="legend-item"><div class="legend-badge do">Do</div>一般動詞（〜します）</div>
+    <div class="legend-item"><div class="legend-badge are">Are</div>どんな状態？</div>
+    <div class="legend-item"><div class="legend-badge do">Do</div>何をする？</div>
   </div>
 </div>
 
@@ -230,7 +232,7 @@
     <option value="50">50問</option>
     <option value="100">全100問</option>
   </select>
-  <button class="export-btn" onclick="exportCSV()">📥 問題一覧をExcel出力</button>
+  <button class="export-btn" style="display:none" onclick="exportCSV()">📥 問題一覧をExcel出力</button>
 </div>
 
 <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
@@ -241,6 +243,9 @@
   <span>📝 <span class="num" id="scoreCurrent">1</span> / <span id="scoreTotal">20</span></span>
 </div>
 
+<div class="nav-row">
+  <button class="back-btn" id="backBtn" onclick="goBack()" disabled>← 前の問題</button>
+</div>
 <div class="card" id="card">
   <!-- Photo area -->
   <div class="photo-area" id="photoArea">
@@ -254,17 +259,14 @@
 
   <!-- Card body -->
   <div class="card-body">
-    <div class="nav-row">
-      <button class="back-btn" id="backBtn" onclick="goBack()" disabled>← 前の問題</button>
-    </div>
     <div class="question-jp" id="qJp"></div>
     <div class="question-rest" id="qRest"></div>
     <div class="btn-row">
       <button class="btn btn-are" id="btnAre" onclick="answer('Are')">
-        Are<span class="sub">be動詞（〜です）</span>
+        Are<span class="sub">どんな状態？</span>
       </button>
       <button class="btn btn-do" id="btnDo" onclick="answer('Do')">
-        Do<span class="sub">一般動詞（〜します）</span>
+        Do<span class="sub">何をする？</span>
       </button>
     </div>
   </div>
