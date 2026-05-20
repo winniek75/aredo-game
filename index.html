@@ -506,16 +506,7 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 <!-- 花火エフェクトコンテナ -->
 <div class="fireworks" id="fireworks"></div>
 
-<!-- 問題データと音声 -->
-<audio id="correctSound" preload="auto">
-  <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApKnqXz0IlKEBZfqOHus2EbBzie2+/Feyz+I2fA97mjZi0WIYnT8OOJOAURXbPpz4oxBCqN1/LX..." />
-</audio>
-<audio id="wrongSound" preload="auto">
-  <source src="data:audio/wav;base64,UklGRnAGAABXQVZFZm10IBAAAAABAAEARB8AAIAfAAABAAgAZGF0YSgGAACQUYwGVL5mfF1dZP///v//Tf////" />
-</audio>
-<audio id="comboSound" preload="auto">
-  <source src="data:audio/wav;base64,UklGRhwGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YfgFAACQUYwGVL5mfF1dZP///v///+Tf" />
-</audio>
+<!-- Sound effects handled by Web Audio API in script -->
 
 <script>
 // 問題データ
@@ -592,10 +583,137 @@ let maxCombo = 0;
 let correctCount = 0;
 let totalQuestions = 0;
 
-// 音声要素
-const correctSound = document.getElementById('correctSound');
-const wrongSound = document.getElementById('wrongSound');
-const comboSound = document.getElementById('comboSound');
+// ── Web Audio API ──────────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playCorrectSound() {
+  try {
+    const ctx = getAudioCtx();
+    const freqs = [523.25, 659.25, 783.99]; // C-E-G chime
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.2;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const start = ctx.currentTime + i * 0.1;
+      osc.start(start);
+      gain.gain.setValueAtTime(0.2, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+      osc.stop(start + 0.3);
+    });
+  } catch(e) {}
+}
+
+function playWrongSound() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.2);
+    gain.gain.value = 0.3;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch(e) {}
+}
+
+function playComboSound() {
+  try {
+    const ctx = getAudioCtx();
+    const freqs = [523.25, 659.25, 783.99, 1046.50];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.15;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const start = ctx.currentTime + i * 0.08;
+      osc.start(start);
+      gain.gain.setValueAtTime(0.15, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+      osc.stop(start + 0.25);
+    });
+  } catch(e) {}
+}
+
+// ── TTS (Text-to-Speech) ─────────────
+function speakSentence(sentence) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(sentence);
+    utter.lang = 'en-US';
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+  } catch(e) {}
+}
+
+// ── localStorage 永続化 ──────────────
+const STORAGE_KEY_HIGH = 'aredo_high_scores';
+const STORAGE_KEY_PLAYED = 'aredo_games_played';
+const STORAGE_KEY_WRONG = 'aredo_wrong_history';
+
+function loadStoredData() {
+  try {
+    return {
+      highScores: JSON.parse(localStorage.getItem(STORAGE_KEY_HIGH)) || {},
+      gamesPlayed: parseInt(localStorage.getItem(STORAGE_KEY_PLAYED)) || 0,
+      wrongHistory: JSON.parse(localStorage.getItem(STORAGE_KEY_WRONG)) || []
+    };
+  } catch(e) {
+    return { highScores: {}, gamesPlayed: 0, wrongHistory: [] };
+  }
+}
+
+function saveHighScore(diffKey, scoreVal) {
+  try {
+    const data = loadStoredData();
+    if (!data.highScores[diffKey] || scoreVal > data.highScores[diffKey]) {
+      data.highScores[diffKey] = scoreVal;
+      localStorage.setItem(STORAGE_KEY_HIGH, JSON.stringify(data.highScores));
+    }
+  } catch(e) {}
+}
+
+function incrementGamesPlayed() {
+  try {
+    const count = (parseInt(localStorage.getItem(STORAGE_KEY_PLAYED)) || 0) + 1;
+    localStorage.setItem(STORAGE_KEY_PLAYED, String(count));
+  } catch(e) {}
+}
+
+function saveWrongAnswer(question, userChoice) {
+  try {
+    const data = loadStoredData();
+    data.wrongHistory.push({
+      no: question.no,
+      jp: question.jp,
+      sentence: question.ans + ' ' + question.rest,
+      correctAns: question.ans,
+      userChoice: userChoice,
+      timestamp: new Date().toISOString()
+    });
+    // Keep last 200 entries to avoid storage overflow
+    if (data.wrongHistory.length > 200) {
+      data.wrongHistory = data.wrongHistory.slice(-200);
+    }
+    localStorage.setItem(STORAGE_KEY_WRONG, JSON.stringify(data.wrongHistory));
+  } catch(e) {}
+}
 
 // 難易度選択
 function selectDifficulty(level) {
@@ -723,8 +841,8 @@ function choose(choice) {
     combo++;
     maxCombo = Math.max(maxCombo, combo);
 
-    // 効果音
-    correctSound.play().catch(() => {});
+    // 効果音（Web Audio API）
+    playCorrectSound();
 
     // スコア表示更新
     document.getElementById('scoreDisplay').textContent = score;
@@ -756,8 +874,11 @@ function choose(choice) {
     combo = 0; // コンボリセット
     document.getElementById('comboDisplay').textContent = combo;
 
-    // 効果音
-    wrongSound.play().catch(() => {});
+    // 効果音（Web Audio API）
+    playWrongSound();
+
+    // 間違い記録を保存
+    saveWrongAnswer(q, choice);
 
     // カードアニメーション
     const card = document.getElementById('card');
@@ -785,9 +906,9 @@ function showComboAlert(comboNum) {
 
   alert.classList.add('show');
 
-  // コンボ音
+  // コンボ音（Web Audio API）
   if (comboNum % 5 === 0) {
-    comboSound.play().catch(() => {});
+    playComboSound();
   }
 
   setTimeout(() => {
@@ -836,6 +957,9 @@ function showFeedback(isCorrect, userChoice, question) {
   // 正解文
   const correctSentence = question.ans + ' ' + question.rest;
   correct.textContent = correctSentence;
+
+  // TTS: 英語の文を読み上げる
+  speakSentence(correctSentence);
 
   // 解説
   let explanationText = '';
@@ -907,6 +1031,10 @@ function showResult() {
   document.getElementById('rankDisplay').textContent = rank;
 
   showScreen('result');
+
+  // localStorage に保存
+  saveHighScore(difficulty, finalScore);
+  incrementGamesPlayed();
 
   // お祝い花火
   if (accuracy >= 80) {
