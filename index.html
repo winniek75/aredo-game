@@ -880,6 +880,9 @@ function choose(choice) {
     // 間違い記録を保存
     saveWrongAnswer(q, choice);
 
+    // WiseXP: report wrong answer
+    if(window.WiseXP) window.WiseXP.reportWrong({question:q.ans+' '+q.rest, correct:q.ans, playerAnswer:choice});
+
     // カードアニメーション
     const card = document.getElementById('card');
     card.classList.add('wrong');
@@ -1032,6 +1035,9 @@ function showResult() {
 
   showScreen('result');
 
+  // WiseXP: report game result
+  if(window.WiseXP) window.WiseXP.reportGame({score:finalScore, correct:correctCount, total:totalQuestions, maxCombo:maxCombo, grade:level});
+
   // localStorage に保存
   saveHighScore(difficulty, finalScore);
   incrementGamesPlayed();
@@ -1046,6 +1052,9 @@ function showResult() {
 function goHome() {
   showScreen('home');
 }
+
+// WiseXP SDK init
+if(window.WiseXP) window.WiseXP.init('aredo-game');
 
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
@@ -1064,5 +1073,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script src="https://cdn.jsdelivr.net/gh/winniek75/wise-xp-sdk@main/wise-xp.js"></script>
 </body>
 </html>
