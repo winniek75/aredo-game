@@ -90,13 +90,23 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
   background-size:300% 100%;animation:gradientShift 3s ease infinite;
   color:white;font-family:"Nunito",sans-serif;font-weight:900;font-size:1.3rem;
   cursor:pointer;letter-spacing:.5px;box-shadow:0 8px 24px rgba(58,134,255,.35);
-  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;}
-.start-btn:before{content:'✨ ゲームスタート！ ✨';position:absolute;top:0;left:0;
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;
+  margin-bottom:12px;}
+.start-btn:before{content:'';position:absolute;top:0;left:0;
   width:100%;height:100%;display:flex;align-items:center;justify-content:center;
   background:inherit;opacity:0;transition:opacity .3s ease;}
 .start-btn:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(58,134,255,.4);}
 .start-btn:hover:before{opacity:1;}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* タイムアタックボタン */
+.timeattack-btn{width:100%;padding:16px;border:none;border-radius:16px;
+  background:linear-gradient(135deg,#ff6b35,#ff2e63,#ff6b35);
+  background-size:300% 100%;animation:gradientShift 3s ease infinite;
+  color:white;font-family:"Nunito",sans-serif;font-weight:900;font-size:1.15rem;
+  cursor:pointer;letter-spacing:.5px;box-shadow:0 8px 24px rgba(255,46,99,.35);
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;}
+.timeattack-btn:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(255,46,99,.4);}
 
 /* ── GAME ─────────────────────────────── */
 #game{display:flex;flex-direction:column;align-items:center;}
@@ -119,6 +129,16 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 .score-item.highlight{border-color:var(--gold);transform:scale(1.05);}
 .score-item .label{font-size:.65rem;color:var(--sub);margin-bottom:2px;}
 .score-item .value{font-family:"Nunito",sans-serif;font-weight:900;font-size:1rem;color:var(--text);}
+
+/* タイムアタック用タイマー表示 */
+.timer-display{background:linear-gradient(135deg,#ff2e63,#ff6b35);
+  color:white;padding:10px 20px;border-radius:16px;font-weight:900;
+  font-size:1.2rem;font-family:"Nunito",sans-serif;margin-bottom:10px;
+  box-shadow:0 4px 12px rgba(255,46,99,.3);text-align:center;
+  display:none;width:100%;}
+.timer-display.show{display:block;}
+.timer-display.warning{animation:timerPulse .5s infinite;}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 
 /* 連続正解・コンボ表示 */
 .combo-display{background:linear-gradient(135deg,var(--gold),#ffeb3b);
@@ -272,6 +292,38 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
   transition:all .2s ease;}
 .fb-next:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(58,134,255,.4);}
 
+/* ── COMBO MILESTONE OVERLAY ─────────── */
+.combo-overlay{position:fixed;top:0;left:0;width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:2000;pointer-events:none;opacity:0;}
+.combo-overlay.show{animation:comboOverlayAnim 1s ease forwards;}
+@keyframes comboOverlayAnim{
+  0%{opacity:0;transform:scale(.5)}
+  15%{opacity:1;transform:scale(1.15)}
+  30%{transform:scale(1)}
+  80%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.3)}
+}
+.combo-overlay-bg{position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.combo-overlay-content{position:relative;z-index:1;text-align:center;}
+.combo-overlay-emoji{font-size:5rem;margin-bottom:10px;
+  filter:drop-shadow(0 0 20px rgba(255,255,255,.5));}
+.combo-overlay-text{font-family:"Nunito",sans-serif;font-weight:900;
+  font-size:clamp(2rem,8vw,3.5rem);color:white;
+  text-shadow:0 4px 20px rgba(0,0,0,.5),0 0 40px rgba(255,215,0,.5);}
+
+/* ── NEAR-MISS / PERFECT BANNER ──────── */
+.near-miss-banner{font-size:1.1rem;font-weight:900;padding:12px 20px;
+  border-radius:12px;margin-bottom:20px;text-align:center;}
+.near-miss-banner.yellow{background:linear-gradient(135deg,#fff3cd,#ffeeba);
+  color:#856404;border:2px solid #ffc107;}
+.near-miss-banner.perfect{background:linear-gradient(135deg,#d4edda,#c3e6cb);
+  color:#155724;border:2px solid var(--correct);
+  animation:perfectPulse 1.5s infinite;}
+@keyframes perfectPulse{0%,100%{transform:scale(1);box-shadow:0 0 10px rgba(6,214,160,.3)}
+  50%{transform:scale(1.03);box-shadow:0 0 25px rgba(6,214,160,.5)}}
+
 /* ── RESULT強化 ─────────────────────────── */
 #result{background:var(--card);border-radius:24px;padding:32px 24px;text-align:center;
   box-shadow:0 12px 40px rgba(0,0,0,.15);}
@@ -392,6 +444,9 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
   <button class="start-btn" onclick="startGame()">
     ✨ ゲームスタート！ ✨
   </button>
+  <button class="timeattack-btn" onclick="startTimeAttack()">
+    ⏱ タイムアタック (60秒)
+  </button>
 </div>
 
 <!-- ===== ゲーム画面 ===== -->
@@ -404,7 +459,7 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
           <div class="label">スコア</div>
           <div class="value" id="scoreDisplay">0</div>
         </div>
-        <div class="score-item">
+        <div class="score-item" id="questionItem">
           <div class="label">問題</div>
           <div class="value"><span id="qNum">1</span>/<span id="qTotal">20</span></div>
         </div>
@@ -415,12 +470,17 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
       </div>
     </div>
 
+    <!-- タイムアタック用タイマー -->
+    <div class="timer-display" id="timerDisplay">
+      ⏱ 残り <span id="timerValue">60</span>秒
+    </div>
+
     <!-- コンボ表示 -->
     <div class="combo-display" id="comboAlert">
       🔥 <span id="comboText">3連続正解！</span> GREAT！🔥
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap" id="progressWrap">
       <div class="progress-bar" id="progressBar" style="width:5%"></div>
     </div>
   </div>
@@ -463,14 +523,15 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
       「あなた」に対する疑問文なので <strong>Are</strong> を使います。
     </div>
   </div>
-  <button class="fb-next" onclick="nextQuestion()">次の問題 →</button>
+  <button class="fb-next" id="fbNextBtn" onclick="nextQuestion()">次の問題 →</button>
 </div>
 
 <!-- ===== 結果画面 ===== -->
 <div id="result" class="screen hidden">
   <div class="result-icon" id="resultIcon">🏆</div>
   <div class="result-title" id="resultTitle">素晴らしい！</div>
-  <div class="result-score">
+  <div id="nearMissBanner"></div>
+  <div class="result-score" id="resultScoreWrap">
     <span class="big" id="resultScore">85</span>点 / 100点満点
   </div>
 
@@ -505,6 +566,15 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 
 <!-- 花火エフェクトコンテナ -->
 <div class="fireworks" id="fireworks"></div>
+
+<!-- コンボマイルストーンオーバーレイ -->
+<div class="combo-overlay" id="comboOverlay">
+  <div class="combo-overlay-bg"></div>
+  <div class="combo-overlay-content">
+    <div class="combo-overlay-emoji" id="comboOverlayEmoji">🔥</div>
+    <div class="combo-overlay-text" id="comboOverlayText">5 COMBO!</div>
+  </div>
+</div>
 
 <!-- Sound effects handled by Web Audio API in script -->
 
@@ -582,6 +652,16 @@ let combo = 0;
 let maxCombo = 0;
 let correctCount = 0;
 let totalQuestions = 0;
+
+// タイムアタックモード変数
+let isTimeAttack = false;
+let timeAttackTimer = null;
+let timeAttackRemaining = 60;
+let timeAttackAnswered = 0;
+let timeAttackCorrect = 0;
+
+// 適応型難易度: 直近5問の正誤記録
+let recentAnswers = []; // true = correct, false = wrong
 
 // ── Web Audio API ──────────────────────
 let audioCtx = null;
@@ -742,8 +822,178 @@ function updateButtonsForDifficulty() {
   // hard では全部表示
 }
 
-// ゲーム開始
+// ── 適応型難易度 ──────────────────────
+function getAdaptiveHintMode() {
+  // Returns: 'auto-show' if struggling, 'hide' if acing, 'normal' otherwise
+  if (recentAnswers.length < 5) return 'normal';
+  const last5 = recentAnswers.slice(-5);
+  const wrongCount = last5.filter(a => !a).length;
+  const correctCount5 = last5.filter(a => a).length;
+  if (wrongCount >= 4) return 'auto-show';
+  if (correctCount5 === 5) return 'hide';
+  return 'normal';
+}
+
+// ── コンボマイルストーン ─────────────
+const COMBO_MILESTONES = {
+  5:  { emoji: '🔥', text: '5 COMBO!' },
+  10: { emoji: '⚡', text: '10 COMBO!' },
+  15: { emoji: '🌟', text: '15 COMBO!' },
+  20: { emoji: '💎', text: '20 COMBO!' },
+};
+
+function showComboMilestone(comboNum) {
+  const milestone = COMBO_MILESTONES[comboNum];
+  if (!milestone) return;
+
+  const overlay = document.getElementById('comboOverlay');
+  document.getElementById('comboOverlayEmoji').textContent = milestone.emoji;
+  document.getElementById('comboOverlayText').textContent = milestone.text;
+
+  overlay.classList.remove('show');
+  // Force reflow to restart animation
+  void overlay.offsetWidth;
+  overlay.classList.add('show');
+
+  playComboSound();
+
+  setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 1000);
+}
+
+// ── タイムアタックモード ────────────
+function startTimeAttack() {
+  isTimeAttack = true;
+  timeAttackRemaining = 60;
+  timeAttackAnswered = 0;
+  timeAttackCorrect = 0;
+
+  // 難易度に応じて問題をフィルタ
+  if (difficulty === 'easy') {
+    selectedQuestions = Q.filter(q => q.difficulty === 'easy');
+  } else if (difficulty === 'normal') {
+    selectedQuestions = Q.filter(q => q.difficulty === 'easy' || q.difficulty === 'normal');
+  } else {
+    selectedQuestions = [...Q];
+  }
+
+  // Shuffle all questions; we will cycle through them
+  shuffled = selectedQuestions.sort(() => Math.random() - 0.5);
+  totalQuestions = shuffled.length;
+
+  idx = 0;
+  score = 0;
+  combo = 0;
+  maxCombo = 0;
+  correctCount = 0;
+  recentAnswers = [];
+
+  updateButtonsForDifficulty();
+
+  // Hide back button and progress bar in time attack
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  // Hide question counter, show timer instead
+  document.getElementById('questionItem').querySelector('.label').textContent = '正解数';
+
+  // Show timer
+  const timerEl = document.getElementById('timerDisplay');
+  timerEl.classList.add('show');
+  timerEl.classList.remove('warning');
+  document.getElementById('timerValue').textContent = '60';
+
+  showScreen('game');
+  loadQuestion();
+
+  // Start countdown
+  timeAttackTimer = setInterval(() => {
+    timeAttackRemaining--;
+    document.getElementById('timerValue').textContent = timeAttackRemaining;
+
+    if (timeAttackRemaining <= 10) {
+      timerEl.classList.add('warning');
+    }
+
+    if (timeAttackRemaining <= 0) {
+      clearInterval(timeAttackTimer);
+      timeAttackTimer = null;
+      showTimeAttackResult();
+    }
+  }, 1000);
+}
+
+function stopTimeAttack() {
+  if (timeAttackTimer) {
+    clearInterval(timeAttackTimer);
+    timeAttackTimer = null;
+  }
+  isTimeAttack = false;
+  document.getElementById('timerDisplay').classList.remove('show', 'warning');
+  document.getElementById('backBtn').style.display = '';
+  document.getElementById('progressWrap').style.display = '';
+  document.getElementById('questionItem').querySelector('.label').textContent = '問題';
+}
+
+function showTimeAttackResult() {
+  stopTimeAttack();
+
+  const accuracy = timeAttackAnswered > 0 ? Math.round((timeAttackCorrect / timeAttackAnswered) * 100) : 0;
+
+  // Override result values for time attack
+  correctCount = timeAttackCorrect;
+  totalQuestions = timeAttackAnswered;
+
+  let icon = '🏆';
+  let title = '';
+  let level = 'S';
+  let rank = '';
+
+  if (timeAttackCorrect >= 30) {
+    icon = '🏆'; title = '超人的！'; level = 'S+'; rank = '神レベル';
+  } else if (timeAttackCorrect >= 20) {
+    icon = '🏆'; title = '完璧！'; level = 'S'; rank = 'パーフェクト';
+  } else if (timeAttackCorrect >= 15) {
+    icon = '🥇'; title = '素晴らしい！'; level = 'A'; rank = 'すごい';
+  } else if (timeAttackCorrect >= 10) {
+    icon = '🥈'; title = 'よくできました！'; level = 'B+'; rank = 'がんばった';
+  } else if (timeAttackCorrect >= 5) {
+    icon = '🥉'; title = 'がんばりました！'; level = 'B'; rank = 'もう少し';
+  } else {
+    icon = '💪'; title = '練習しよう！'; level = 'C'; rank = 'がんばろう';
+  }
+
+  document.getElementById('resultIcon').textContent = icon;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultScore').textContent = timeAttackCorrect;
+  document.getElementById('resultScoreWrap').innerHTML =
+    `<span class="big" id="resultScore">${timeAttackCorrect}</span>問正解 / ${timeAttackAnswered}問中 (60秒)`;
+  document.getElementById('accuracyDisplay').textContent = accuracy + '%';
+  document.getElementById('maxComboDisplay').textContent = maxCombo;
+  document.getElementById('levelDisplay').textContent = level;
+  document.getElementById('rankDisplay').textContent = rank;
+
+  // Near-miss / perfect banner
+  showNearMissBanner(accuracy, timeAttackAnswered, timeAttackCorrect);
+
+  showScreen('result');
+
+  if(window.WiseXP) window.WiseXP.reportGame({score:timeAttackCorrect, correct:timeAttackCorrect, total:timeAttackAnswered, maxCombo:maxCombo, grade:level, mode:'timeattack'});
+
+  saveHighScore(difficulty + '_timeattack', timeAttackCorrect);
+  incrementGamesPlayed();
+
+  if (accuracy >= 80) {
+    setTimeout(() => createFireworks(), 500);
+  }
+}
+
+// ゲーム開始（通常モード）
 function startGame() {
+  // Stop any running time attack
+  stopTimeAttack();
+  isTimeAttack = false;
+
   // 難易度に応じて問題をフィルタ
   if (difficulty === 'easy') {
     selectedQuestions = Q.filter(q => q.difficulty === 'easy');
@@ -762,6 +1012,7 @@ function startGame() {
   combo = 0;
   maxCombo = 0;
   correctCount = 0;
+  recentAnswers = [];
 
   updateButtonsForDifficulty();
   showScreen('game');
@@ -776,7 +1027,14 @@ function showScreen(name) {
 
 // 問題読み込み
 function loadQuestion() {
-  if (idx >= shuffled.length) {
+  // In time attack, cycle through questions if we run out
+  if (isTimeAttack && idx >= shuffled.length) {
+    // Re-shuffle and restart index
+    shuffled = shuffled.sort(() => Math.random() - 0.5);
+    idx = 0;
+  }
+
+  if (!isTimeAttack && idx >= shuffled.length) {
     showResult();
     return;
   }
@@ -785,11 +1043,25 @@ function loadQuestion() {
   const total = shuffled.length;
 
   // UI更新
-  document.getElementById('qNum').textContent = idx + 1;
-  document.getElementById('qTotal').textContent = total;
-  document.getElementById('qBadgeNum').textContent = idx + 1;
+  if (isTimeAttack) {
+    document.getElementById('qNum').textContent = timeAttackCorrect;
+    document.getElementById('qTotal').textContent = timeAttackAnswered;
+  } else {
+    document.getElementById('qNum').textContent = idx + 1;
+    document.getElementById('qTotal').textContent = total;
+  }
+  document.getElementById('qBadgeNum').textContent = isTimeAttack ? (timeAttackAnswered + 1) : (idx + 1);
   document.getElementById('qEnglish').innerHTML = `<span class="blank">___</span> ${q.rest}`;
-  document.getElementById('qHint').innerHTML = `<span class="hint-label">ヒント</span> ${q.hint}`;
+
+  // 適応型ヒント表示
+  const hintMode = getAdaptiveHintMode();
+  const hintEl = document.getElementById('qHint');
+  if (hintMode === 'hide') {
+    hintEl.style.display = 'none';
+  } else {
+    hintEl.style.display = 'flex';
+    hintEl.innerHTML = `<span class="hint-label">ヒント</span> ${q.hint}`;
+  }
 
   // 画像読み込み
   const img = document.getElementById('qPhoto');
@@ -804,9 +1076,11 @@ function loadQuestion() {
     np.style.display = 'flex';
   };
 
-  // プログレスバー
-  const progress = ((idx + 1) / total) * 100;
-  document.getElementById('progressBar').style.width = progress + '%';
+  // プログレスバー（通常モードのみ）
+  if (!isTimeAttack) {
+    const progress = ((idx + 1) / total) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+  }
 
   // ボタン有効化
   document.querySelectorAll('.choice-btn').forEach(btn => {
@@ -814,8 +1088,10 @@ function loadQuestion() {
     btn.disabled = false;
   });
 
-  // 前のボタン
-  document.getElementById('backBtn').disabled = idx <= 0;
+  // 前のボタン（通常モードのみ）
+  if (!isTimeAttack) {
+    document.getElementById('backBtn').disabled = idx <= 0;
+  }
 
   // カードアニメーション
   const card = document.getElementById('card');
@@ -834,6 +1110,10 @@ function choose(choice) {
   const clickedBtn = document.querySelector(`.choice-btn.${choice.toLowerCase()}`);
   const correctBtn = document.querySelector(`.choice-btn.${q.ans.toLowerCase()}`);
 
+  // 適応型難易度: 記録
+  recentAnswers.push(isCorrect);
+  if (recentAnswers.length > 5) recentAnswers.shift();
+
   if (isCorrect) {
     clickedBtn.classList.add('correct');
     score += 10 + combo; // コンボボーナス
@@ -841,12 +1121,27 @@ function choose(choice) {
     combo++;
     maxCombo = Math.max(maxCombo, combo);
 
+    if (isTimeAttack) {
+      timeAttackCorrect++;
+      timeAttackAnswered++;
+    }
+
     // 効果音（Web Audio API）
     playCorrectSound();
 
     // スコア表示更新
     document.getElementById('scoreDisplay').textContent = score;
     document.getElementById('comboDisplay').textContent = combo;
+
+    if (isTimeAttack) {
+      document.getElementById('qNum').textContent = timeAttackCorrect;
+      document.getElementById('qTotal').textContent = timeAttackAnswered;
+    }
+
+    // コンボマイルストーン（5/10/15/20）
+    if (COMBO_MILESTONES[combo]) {
+      showComboMilestone(combo);
+    }
 
     // コンボ表示
     if (combo >= 3) {
@@ -874,6 +1169,12 @@ function choose(choice) {
     combo = 0; // コンボリセット
     document.getElementById('comboDisplay').textContent = combo;
 
+    if (isTimeAttack) {
+      timeAttackAnswered++;
+      document.getElementById('qNum').textContent = timeAttackCorrect;
+      document.getElementById('qTotal').textContent = timeAttackAnswered;
+    }
+
     // 効果音（Web Audio API）
     playWrongSound();
 
@@ -888,8 +1189,19 @@ function choose(choice) {
     card.classList.add('wrong');
   }
 
-  // フィードバック表示
-  showFeedback(isCorrect, choice, q);
+  // タイムアタックモード: auto-advance
+  if (isTimeAttack) {
+    const delay = isCorrect ? 500 : 1500;
+    setTimeout(() => {
+      if (!isTimeAttack) return; // Timer may have ended
+      idx++;
+      showScreen('game');
+      loadQuestion();
+    }, delay);
+  } else {
+    // 通常モード: フィードバック表示
+    showFeedback(isCorrect, choice, q);
+  }
 }
 
 // コンボアラート
@@ -909,8 +1221,8 @@ function showComboAlert(comboNum) {
 
   alert.classList.add('show');
 
-  // コンボ音（Web Audio API）
-  if (comboNum % 5 === 0) {
+  // コンボ音（Web Audio API）- only for non-milestone combos
+  if (comboNum % 5 === 0 && !COMBO_MILESTONES[comboNum]) {
     playComboSound();
   }
 
@@ -980,6 +1292,9 @@ function showFeedback(isCorrect, userChoice, question) {
 
   explanation.innerHTML = explanationText;
 
+  // Show/hide next button (always visible in normal mode)
+  document.getElementById('fbNextBtn').style.display = '';
+
   setTimeout(() => {
     showScreen('feedback');
   }, 1000);
@@ -1002,7 +1317,23 @@ function goBack() {
   }
 }
 
-// 結果表示
+// ── Near-miss / Perfect バナー ────────
+function showNearMissBanner(accuracy, total, correct) {
+  const banner = document.getElementById('nearMissBanner');
+  banner.innerHTML = '';
+  banner.className = '';
+
+  if (accuracy === 100 && total > 0) {
+    banner.className = 'near-miss-banner perfect';
+    banner.innerHTML = 'PERFECT! 💎';
+  } else if (accuracy >= 80 && accuracy < 100) {
+    const remaining = total - correct;
+    banner.className = 'near-miss-banner yellow';
+    banner.innerHTML = `あと${remaining}問でパーフェクト！`;
+  }
+}
+
+// 結果表示（通常モード）
 function showResult() {
   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const finalScore = Math.round((score / (totalQuestions * 10)) * 100);
@@ -1028,10 +1359,15 @@ function showResult() {
   document.getElementById('resultIcon').textContent = icon;
   document.getElementById('resultTitle').textContent = title;
   document.getElementById('resultScore').textContent = finalScore;
+  document.getElementById('resultScoreWrap').innerHTML =
+    `<span class="big" id="resultScore">${finalScore}</span>点 / 100点満点`;
   document.getElementById('accuracyDisplay').textContent = accuracy + '%';
   document.getElementById('maxComboDisplay').textContent = maxCombo;
   document.getElementById('levelDisplay').textContent = level;
   document.getElementById('rankDisplay').textContent = rank;
+
+  // Near-miss / perfect banner
+  showNearMissBanner(accuracy, totalQuestions, correctCount);
 
   showScreen('result');
 
@@ -1050,6 +1386,7 @@ function showResult() {
 
 // ホームへ戻る
 function goHome() {
+  stopTimeAttack();
   showScreen('home');
 }
 
