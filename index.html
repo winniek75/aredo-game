@@ -717,6 +717,7 @@ let combo = 0;
 let maxCombo = 0;
 let correctCount = 0;
 let totalQuestions = 0;
+let sessionWrongAnswers = []; // wrongAnswers standard format for MoWISE
 
 // タイムアタックモード変数
 let isTimeAttack = false;
@@ -1056,6 +1057,7 @@ function showTimeAttackResult() {
 // ゲーム開始（通常モード）
 function startGame() {
   window.__wiseStartTime = Date.now();
+  sessionWrongAnswers = [];
   // Stop any running time attack
   stopTimeAttack();
   isTimeAttack = false;
@@ -1247,6 +1249,18 @@ function choose(choice) {
     // 間違い記録を保存
     saveWrongAnswer(q, choice);
 
+    // wrongAnswers standard format (MoWISE B2 spec)
+    const waTag = (q.ans === 'Are' || q.ans === 'Is' || q.ans === 'Am') ? 'be_verb'
+      : (q.ans === 'Does') ? 'third_person_s'
+      : 'general_verb';
+    sessionWrongAnswers.push({
+      q: q.ans + ' ' + q.rest,
+      correct: q.ans,
+      chosen: choice,
+      tag: waTag
+    });
+    if (sessionWrongAnswers.length > 20) sessionWrongAnswers = sessionWrongAnswers.slice(-20);
+
     // WiseXP: report wrong answer
     if(window.WiseXP) window.WiseXP.reportWrong({question:q.ans+' '+q.rest, correct:q.ans, playerAnswer:choice});
 
@@ -1406,12 +1420,11 @@ function showResult() {
 
   // → MoWISE portal へスコア送信 (WiseGame Bridge)
   try {
-    const wrongLog = JSON.parse(localStorage.getItem(STORAGE_KEY_WRONG) || '[]').slice(-20);
     window.WiseGame && window.WiseGame.reportComplete({
       score: finalScore, maxScore: 100, accuracy: accuracy,
       timeSpent: Math.round((Date.now() - (window.__wiseStartTime || Date.now())) / 1000),
       metadata: { maxCombo: maxCombo, totalQuestions: totalQuestions,
-                  correctCount: correctCount, recentWrong: wrongLog }
+                  correctCount: correctCount, wrongAnswers: sessionWrongAnswers }
     });
   } catch(e) {}
 
