@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Are/Do クイズゲーム - 子ども向け強化版</title>
+<title>Am・Is・Are・Do・Does クイズ</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -182,8 +182,10 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 
 /* 写真エリア強化 */
 .photo-area{width:100%;height:200px;background:linear-gradient(135deg,#eef0f8,#e4e8f4);
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  display:none;align-items:center;justify-content:center;overflow:hidden;
   border-radius:24px 24px 0 0;position:relative;}
+/* 画像が読み込めたときだけ枠を出す（無い・失敗のときは枠ごと非表示） */
+.photo-area.has-photo{display:flex;}
 .photo-area:before{content:'';position:absolute;top:0;left:0;
   width:100%;height:100%;background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,.1) 50%,transparent 70%);
   animation:photoShine 3s infinite;}
@@ -191,13 +193,8 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 
 .photo-area img{width:100%;height:100%;object-fit:cover;display:none;border-radius:24px 24px 0 0;}
 .photo-area img.loaded{display:block;}
-.no-photo{display:flex;flex-direction:column;align-items:center;gap:6px;
-  color:#c8d0e0;font-size:.8rem;font-weight:700;}
-.no-photo .icon{font-size:2.5rem;opacity:.5;}
-
-.q-badge{position:absolute;top:12px;left:14px;background:rgba(255,255,255,.9);
-  backdrop-filter:blur(4px);border-radius:12px;padding:4px 12px;
-  font-size:.75rem;font-weight:700;color:var(--text);border:1px solid rgba(255,255,255,.5);}
+.q-badge{display:inline-block;background:#eef0f8;border-radius:12px;padding:4px 12px;
+  font-size:.75rem;font-weight:700;color:var(--text);margin-bottom:10px;}
 
 /* カード本体強化 */
 .card-body{padding:24px 24px 20px;}
@@ -269,8 +266,31 @@ body{font-family:"Noto Sans JP",sans-serif;background:var(--bg);min-height:100vh
 .feedback-msg{font-size:1.4rem;font-weight:900;color:var(--text);
   font-family:"Nunito",sans-serif;margin-bottom:8px;}
 .feedback-correct{font-size:1.2rem;color:var(--correct);font-weight:700;margin-bottom:15px;}
-.feedback-explanation{font-size:.95rem;color:var(--sub);line-height:1.6;
-  background:#f8f9fc;border-radius:12px;padding:12px;margin-bottom:20px;}
+.feedback-explanation{font-size:.95rem;color:#5a6178;line-height:1.7;text-align:left;
+  background:#f8f9fc;border-radius:12px;padding:14px;margin-bottom:20px;}
+.feedback-explanation .ex-step{margin-bottom:6px;}
+.feedback-explanation .ex-miss{margin:8px 0;padding:8px 10px;border-radius:10px;
+  background:#fff1f2;color:#b4232f;font-weight:700;}
+.feedback-explanation .ex-compare{margin-top:10px;padding:10px 12px;border-radius:10px;
+  background:white;border:2px dashed #dde;}
+.feedback-explanation .ex-compare .ex-title{font-size:.78rem;font-weight:900;color:var(--sub);margin-bottom:4px;}
+.feedback-explanation .ex-compare .ex-line{font-family:"Nunito","Noto Sans JP",sans-serif;font-weight:700;color:var(--text);}
+.feedback-explanation .ex-compare .ex-note{font-size:.8rem;color:var(--sub);font-weight:700;}
+.feedback-explanation .w-be{color:var(--are);} .feedback-explanation .w-do{color:var(--do);}
+
+/* 見分け方のまとめ（ホーム） */
+.howto{width:100%;background:white;border-radius:16px;padding:14px 16px;margin-bottom:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);font-size:.85rem;font-weight:700;color:var(--text);line-height:1.8;}
+.howto .howto-title{font-weight:900;margin-bottom:4px;}
+.howto .eg{font-family:"Nunito","Noto Sans JP",sans-serif;color:var(--sub);font-size:.8rem;}
+
+/* 学習ホームへのリンク・メニューへもどる（控えめ） */
+.portal-link{display:block;margin:16px auto 0;text-align:center;font-size:.82rem;font-weight:700;
+  color:var(--sub);text-decoration:none;}
+.portal-link:hover{color:var(--text);text-decoration:underline;}
+.quit-link{display:block;margin:14px auto 0;background:none;border:none;cursor:pointer;
+  font-family:"Noto Sans JP",sans-serif;font-size:.8rem;font-weight:700;color:var(--sub);}
+.quit-link:hover{color:var(--text);text-decoration:underline;}
 
 /* 花火エフェクト */
 .fireworks{position:fixed;top:0;left:0;width:100%;height:100%;
@@ -440,9 +460,9 @@ window.WiseGame.init({ gameId: 'aredo-game' });
 <!-- ===== ホーム画面 ===== -->
 <div id="home" class="screen">
   <div class="home-logo">
-    <span class="am">Am</span> / <span class="is">Is</span> / <span class="are">Are</span> / <span class="do">Do</span> / <span class="does">Does</span> クイズ
+    <span class="am">Am</span>・<span class="is">Is</span>・<span class="are">Are</span>・<span class="do">Do</span>・<span class="does">Does</span> クイズ
   </div>
-  <div class="home-sub">英語の基本をマスターしよう！楽しく学習できる特別版</div>
+  <div class="home-sub">「〜ですか？」「〜しますか？」の文の、さいしょの1語をえらぼう</div>
 
   <!-- 難易度選択 -->
   <div class="difficulty-section">
@@ -467,42 +487,50 @@ window.WiseGame.init({ gameId: 'aredo-game' });
   </div>
 
   <!-- ルール説明 -->
+  <div class="howto">
+    <div class="howto-title">🔍 見分け方は2ステップ</div>
+    <div>① 主語の<strong>うしろ</strong>を見る<br>
+      　・ようす・状態（happy, busy など）→ <strong>Am / Is / Are</strong><br>
+      　・動作・習慣の動詞（play, like など）→ <strong>Do / Does</strong></div>
+    <div>② <strong>主語</strong>を見て、形を決める</div>
+    <div class="eg">Is she happy?（ようす）／ Does she play tennis?（動作・習慣）</div>
+  </div>
   <div class="rule-grid">
     <div class="rule-card am">
       <div class="rc-label">Am</div>
-      <div class="rc-title">私（I）の時に使う</div>
-      <div class="rc-ex">I am happy / Am I happy?</div>
+      <div class="rc-title">ようす・状態｜主語が I（私）</div>
+      <div class="rc-ex">Am I late? / Am I right?</div>
     </div>
     <div class="rule-card is">
       <div class="rc-label">Is</div>
-      <div class="rc-title">彼・彼女・それ（He/She/It）</div>
-      <div class="rc-ex">She is kind / Is he tall?</div>
+      <div class="rc-title">ようす・状態｜主語が He / She / It</div>
+      <div class="rc-ex">Is she happy? / Is he tall?</div>
     </div>
     <div class="rule-card are">
       <div class="rc-label">Are</div>
-      <div class="rc-title">あなた・私たち・彼ら（You/We/They）</div>
-      <div class="rc-ex">You are smart / Are they ready?</div>
+      <div class="rc-title">ようす・状態｜主語が You / We / They</div>
+      <div class="rc-ex">Are you busy? / Are they friends?</div>
     </div>
     <div class="rule-card do">
       <div class="rc-label">Do</div>
-      <div class="rc-title">動作・習慣（I/You/We/They）</div>
+      <div class="rc-title">動作・習慣（動詞がある）｜主語が I / You / We / They</div>
       <div class="rc-ex">Do you like cats? / Do they play soccer?</div>
     </div>
     <div class="rule-card does">
       <div class="rc-label">Does</div>
-      <div class="rc-title">動作・習慣（He/She/It）</div>
-      <div class="rc-ex">Does she study? / Does he work?</div>
+      <div class="rc-title">動作・習慣（動詞がある）｜主語が He / She / It</div>
+      <div class="rc-ex">Does she play tennis? / Does he like dogs?</div>
     </div>
   </div>
 
   <div class="home-row">
     <span>問題数：</span>
     <select id="numSelect">
+      <option value="5">5問（おためし）</option>
       <option value="10">10問</option>
       <option value="20" selected>20問</option>
       <option value="30">30問</option>
-      <option value="50">50問</option>
-      <option value="100">全100問</option>
+      <option value="all" id="numAllOption">ぜんぶ</option>
     </select>
   </div>
 
@@ -512,6 +540,8 @@ window.WiseGame.init({ gameId: 'aredo-game' });
   <button class="timeattack-btn" onclick="startTimeAttack()">
     ⏱ タイムアタック (60秒)
   </button>
+  <div class="home-sub" style="margin:10px 0 0;font-size:.78rem;">「ゲームスタート」は時間制限なし。ゆっくり考えてOK！</div>
+  <a class="portal-link" href="https://wise-english-portal.vercel.app">🏠 学習ホームにもどる</a>
 </div>
 
 <!-- ===== ゲーム画面 ===== -->
@@ -551,15 +581,11 @@ window.WiseGame.init({ gameId: 'aredo-game' });
   </div>
 
   <div class="card" id="card">
-    <div class="photo-area">
-      <img id="qPhoto" alt="問題画像">
-      <div class="no-photo" id="noPhoto">
-        <div class="icon">📷</div>
-        <div>画像なし</div>
-      </div>
-      <div class="q-badge">Q<span id="qBadgeNum">1</span></div>
+    <div class="photo-area" id="photoArea">
+      <img id="qPhoto" alt="">
     </div>
     <div class="card-body">
+      <div class="q-badge">Q<span id="qBadgeNum">1</span></div>
       <div class="q-english" id="qEnglish">
         <span class="blank">___</span> you ready?
       </div>
@@ -576,6 +602,7 @@ window.WiseGame.init({ gameId: 'aredo-game' });
       </div>
     </div>
   </div>
+  <button class="quit-link" onclick="goHome()">メニューにもどる</button>
 </div>
 
 <!-- ===== フィードバック画面 ===== -->
@@ -584,9 +611,7 @@ window.WiseGame.init({ gameId: 'aredo-game' });
     <div class="feedback-icon" id="feedbackIcon">✅</div>
     <div class="feedback-msg" id="feedbackMsg">正解！</div>
     <div class="feedback-correct" id="feedbackCorrect">Are you ready?</div>
-    <div class="feedback-explanation" id="feedbackExplanation">
-      「あなた」に対する疑問文なので <strong>Are</strong> を使います。
-    </div>
+    <div class="feedback-explanation" id="feedbackExplanation"></div>
   </div>
   <button class="fb-next" id="fbNextBtn" onclick="nextQuestion()">次の問題 →</button>
 </div>
@@ -625,8 +650,9 @@ window.WiseGame.init({ gameId: 'aredo-game' });
 
   <div class="result-actions">
     <button class="result-btn secondary" onclick="goHome()">ホームへ</button>
-    <button class="result-btn primary" onclick="startGame()">もう一度</button>
+    <button class="result-btn primary" onclick="playAgain()">もう一度</button>
   </div>
+  <a class="portal-link" href="https://wise-english-portal.vercel.app">🏠 学習ホームにもどる</a>
 </div>
 
 <!-- 花火エフェクトコンテナ -->
@@ -646,7 +672,7 @@ window.WiseGame.init({ gameId: 'aredo-game' });
 <script>
 // 問題データ
 const Q = [
-  // Am問題（40問）
+  // Am問題（10問）
   {no:'am001',jp:'私は遅刻してる？',rest:'I late?',ans:'Am',hint:'late = 遅刻している',img:'am001.jpg',difficulty:'easy'},
   {no:'am002',jp:'私は正しい？',rest:'I right?',ans:'Am',hint:'right = 正しい',img:'am002.jpg',difficulty:'easy'},
   {no:'am003',jp:'私は早い？',rest:'I early?',ans:'Am',hint:'early = 早い',img:'am003.jpg',difficulty:'easy'},
@@ -658,7 +684,7 @@ const Q = [
   {no:'am009',jp:'私は幸せ？',rest:'I happy?',ans:'Am',hint:'happy = 幸せ',img:'am014.jpg',difficulty:'easy'},
   {no:'am010',jp:'私は悲しい？',rest:'I sad?',ans:'Am',hint:'sad = 悲しい',img:'am015.jpg',difficulty:'easy'},
 
-  // Is問題（30問）
+  // Is問題（10問）
   {no:'is001',jp:'彼は忙しい？',rest:'he busy?',ans:'Is',hint:'busy = 忙しい',img:'is001.jpg',difficulty:'easy'},
   {no:'is002',jp:'彼女は眠い？',rest:'she sleepy?',ans:'Is',hint:'sleepy = 眠い',img:'is002.jpg',difficulty:'easy'},
   {no:'is003',jp:'彼は疲れた？',rest:'he tired?',ans:'Is',hint:'tired = 疲れた',img:'is003.jpg',difficulty:'easy'},
@@ -670,7 +696,7 @@ const Q = [
   {no:'is009',jp:'彼は背が高い？',rest:'he tall?',ans:'Is',hint:'tall = 背が高い',img:'is010.jpg',difficulty:'easy'},
   {no:'is010',jp:'彼女はきれい？',rest:'she pretty?',ans:'Is',hint:'pretty = きれい',img:'is011.jpg',difficulty:'easy'},
 
-  // Are問題（30問）
+  // Are問題（10問）
   {no:'are001',jp:'あなたは忙しい？',rest:'you busy?',ans:'Are',hint:'busy = 忙しい',img:'are001.jpg',difficulty:'easy'},
   {no:'are002',jp:'彼らは友達？',rest:'they friends?',ans:'Are',hint:'friends = 友達',img:'are002.jpg',difficulty:'easy'},
   {no:'are003',jp:'私たちは準備OK？',rest:'we ready?',ans:'Are',hint:'ready = 準備できた',img:'are003.jpg',difficulty:'easy'},
@@ -682,7 +708,7 @@ const Q = [
   {no:'are009',jp:'あなたは眠い？',rest:'you sleepy?',ans:'Are',hint:'sleepy = 眠い',img:'are009.jpg',difficulty:'easy'},
   {no:'are010',jp:'私たちは友達？',rest:'we friends?',ans:'Are',hint:'friends = 友達',img:'are010.jpg',difficulty:'easy'},
 
-  // Do問題（20問）
+  // Do問題（10問）
   {no:'do001',jp:'コーヒーが好き？',rest:'you like coffee?',ans:'Do',hint:'like = 好き（習慣）',img:'do001.jpg',difficulty:'normal'},
   {no:'do002',jp:'英語を勉強する？',rest:'you study English?',ans:'Do',hint:'study = 勉強する（行動）',img:'do002.jpg',difficulty:'normal'},
   {no:'do003',jp:'音楽を聞く？',rest:'you listen to music?',ans:'Do',hint:'listen to = 聞く（行動）',img:'do003.jpg',difficulty:'normal'},
@@ -694,7 +720,7 @@ const Q = [
   {no:'do009',jp:'映画を見る？',rest:'you watch movies?',ans:'Do',hint:'watch = 見る（行動）',img:'do010.jpg',difficulty:'normal'},
   {no:'do010',jp:'テレビを見る？',rest:'you watch TV?',ans:'Do',hint:'watch = 見る（行動）',img:'do011.jpg',difficulty:'normal'},
 
-  // Does問題（20問）
+  // Does問題（10問）
   {no:'does001',jp:'彼女はコーヒーが好き？',rest:'she like coffee?',ans:'Does',hint:'like = 好き（三人称単数）',img:'does001.jpg',difficulty:'hard'},
   {no:'does002',jp:'彼は英語を勉強する？',rest:'he study English?',ans:'Does',hint:'study = 勉強する（三人称）',img:'does002.jpg',difficulty:'hard'},
   {no:'does003',jp:'彼女は音楽を聞く？',rest:'she listen to music?',ans:'Does',hint:'listen to = 聞く（三人称）',img:'does003.jpg',difficulty:'hard'},
@@ -728,6 +754,31 @@ let timeAttackCorrect = 0;
 
 // 適応型難易度: 直近5問の正誤記録
 let recentAnswers = []; // true = correct, false = wrong
+
+// 1問につき1回だけ答えられるようにするフラグ（キーボード連打・二重カウント防止）
+let answered = false;
+// 通常モードの回答ログ（「前の問題」で戻ったときに集計を取り消すため）
+let answerLog = [];
+
+// 難易度ごとの出題プールと選択肢
+function getPool(level) {
+  if (level === 'easy') return Q.filter(q => q.difficulty === 'easy');
+  if (level === 'normal') return Q.filter(q => q.difficulty === 'easy' || q.difficulty === 'normal');
+  return Q.slice();
+}
+function allowedChoices(level) {
+  if (level === 'easy') return ['Am', 'Is', 'Are'];
+  if (level === 'normal') return ['Am', 'Is', 'Are', 'Do'];
+  return ['Am', 'Is', 'Are', 'Do', 'Does'];
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // ── Web Audio API ──────────────────────
 let audioCtx = null;
@@ -871,6 +922,10 @@ function selectDifficulty(level) {
 
   // ボタン表示切り替え
   updateButtonsForDifficulty();
+
+  // 「ぜんぶ」の問題数を実際の数に合わせて表示
+  const allOpt = document.getElementById('numAllOption');
+  if (allOpt) allOpt.textContent = `ぜんぶ（${getPool(level).length}問）`;
 }
 
 function updateButtonsForDifficulty() {
@@ -934,18 +989,17 @@ function startTimeAttack() {
   timeAttackRemaining = 60;
   timeAttackAnswered = 0;
   timeAttackCorrect = 0;
+  if (timeAttackTimer) { clearInterval(timeAttackTimer); timeAttackTimer = null; }
+  window.__wiseStartTime = Date.now();
+  sessionWrongAnswers = [];
+  answerLog = [];
+  lastMode = 'timeattack';
 
   // 難易度に応じて問題をフィルタ
-  if (difficulty === 'easy') {
-    selectedQuestions = Q.filter(q => q.difficulty === 'easy');
-  } else if (difficulty === 'normal') {
-    selectedQuestions = Q.filter(q => q.difficulty === 'easy' || q.difficulty === 'normal');
-  } else {
-    selectedQuestions = [...Q];
-  }
+  selectedQuestions = getPool(difficulty);
 
   // Shuffle all questions; we will cycle through them
-  shuffled = selectedQuestions.sort(() => Math.random() - 0.5);
+  shuffled = shuffle(selectedQuestions);
   totalQuestions = shuffled.length;
 
   idx = 0;
@@ -954,6 +1008,8 @@ function startTimeAttack() {
   maxCombo = 0;
   correctCount = 0;
   recentAnswers = [];
+  document.getElementById('scoreDisplay').textContent = 0;
+  document.getElementById('comboDisplay').textContent = 0;
 
   updateButtonsForDifficulty();
 
@@ -1054,6 +1110,13 @@ function showTimeAttackResult() {
   }
 }
 
+// 直前に遊んだモードで「もう一度」
+let lastMode = 'normal';
+function playAgain() {
+  if (lastMode === 'timeattack') startTimeAttack();
+  else startGame();
+}
+
 // ゲーム開始（通常モード）
 function startGame() {
   window.__wiseStartTime = Date.now();
@@ -1062,17 +1125,15 @@ function startGame() {
   stopTimeAttack();
   isTimeAttack = false;
 
-  // 難易度に応じて問題をフィルタ
-  if (difficulty === 'easy') {
-    selectedQuestions = Q.filter(q => q.difficulty === 'easy');
-  } else if (difficulty === 'normal') {
-    selectedQuestions = Q.filter(q => q.difficulty === 'easy' || q.difficulty === 'normal');
-  } else {
-    selectedQuestions = Q;
-  }
+  lastMode = 'normal';
+  answerLog = [];
 
-  const num = parseInt(document.getElementById('numSelect').value);
-  shuffled = selectedQuestions.sort(() => Math.random() - 0.5).slice(0, num);
+  // 難易度に応じて問題をフィルタ
+  selectedQuestions = getPool(difficulty);
+
+  const numVal = document.getElementById('numSelect').value;
+  const num = numVal === 'all' ? selectedQuestions.length : (parseInt(numVal, 10) || 20);
+  shuffled = shuffle(selectedQuestions).slice(0, num);
   totalQuestions = shuffled.length;
 
   idx = 0;
@@ -1081,6 +1142,8 @@ function startGame() {
   maxCombo = 0;
   correctCount = 0;
   recentAnswers = [];
+  document.getElementById('scoreDisplay').textContent = 0;
+  document.getElementById('comboDisplay').textContent = 0;
 
   updateButtonsForDifficulty();
   showScreen('game');
@@ -1093,12 +1156,20 @@ function showScreen(name) {
   document.getElementById(name).classList.remove('hidden');
 }
 
+// 問題の写真を使うかどうか。
+// 現在 images/ には写真が1枚も入っていない（全50問ぶん未配置）ため false。
+// 写真を images/ に入れたら true にする（node check_images.js で不足を確認できる）。
+// true でも、無い・読み込めない写真の問題は枠ごと非表示になる。
+const USE_IMAGES = false;
+// 読み込みに失敗した画像は覚えておき、同じ画像を何度も取りに行かない
+const missingImages = {};
+
 // 問題読み込み
 function loadQuestion() {
   // In time attack, cycle through questions if we run out
   if (isTimeAttack && idx >= shuffled.length) {
     // Re-shuffle and restart index
-    shuffled = shuffled.sort(() => Math.random() - 0.5);
+    shuffled = shuffle(shuffled);
     idx = 0;
   }
 
@@ -1109,6 +1180,7 @@ function loadQuestion() {
 
   const q = shuffled[idx];
   const total = shuffled.length;
+  answered = false;
 
   // UI更新
   if (isTimeAttack) {
@@ -1132,17 +1204,29 @@ function loadQuestion() {
   }
 
   // 画像読み込み
+  // 画像が無い・読み込めないときは枠ごと出さない（「画像なし」は表示しない）
   const img = document.getElementById('qPhoto');
-  const np = document.getElementById('noPhoto');
-  img.src = `images/${q.img}`;
+  const photoArea = document.getElementById('photoArea');
+  const imgSrc = (USE_IMAGES && q.img) ? `images/${q.img}` : '';
+  img.classList.remove('loaded');
+  photoArea.classList.remove('has-photo');
   img.onload = () => {
+    if (img.dataset.want !== imgSrc) return; // 前の問題の読み込み結果は無視
     img.classList.add('loaded');
-    np.style.display = 'none';
+    photoArea.classList.add('has-photo');
   };
   img.onerror = () => {
+    if (img.dataset.want !== imgSrc) return;
+    missingImages[imgSrc] = true;
     img.classList.remove('loaded');
-    np.style.display = 'flex';
+    photoArea.classList.remove('has-photo');
   };
+  img.dataset.want = imgSrc;
+  if (imgSrc && !missingImages[imgSrc]) {
+    img.src = imgSrc;
+  } else {
+    img.removeAttribute('src');
+  }
 
   // プログレスバー（通常モードのみ）
   if (!isTimeAttack) {
@@ -1168,8 +1252,14 @@ function loadQuestion() {
 
 // 選択肢クリック
 function choose(choice) {
+  // すでに答えた問題・その段階に無い選択肢（キーボード操作など）は無視
+  if (answered) return;
+  if (allowedChoices(difficulty).indexOf(choice) === -1) return;
   const q = shuffled[idx];
+  if (!q) return;
+  answered = true;
   const isCorrect = choice === q.ans;
+  const comboBefore = combo;
 
   // ボタン無効化
   document.querySelectorAll('.choice-btn').forEach(btn => btn.disabled = true);
@@ -1184,6 +1274,7 @@ function choose(choice) {
 
   if (isCorrect) {
     clickedBtn.classList.add('correct');
+    if (!isTimeAttack) answerLog[idx] = { correct: true, gain: 10 + combo, comboBefore: comboBefore };
     score += 10 + combo; // コンボボーナス
     correctCount++;
     combo++;
@@ -1234,6 +1325,7 @@ function choose(choice) {
   } else {
     clickedBtn.classList.add('wrong');
     correctBtn.classList.add('correct');
+    if (!isTimeAttack) answerLog[idx] = { correct: false, gain: 0, comboBefore: comboBefore };
     combo = 0; // コンボリセット
     document.getElementById('comboDisplay').textContent = combo;
 
@@ -1332,6 +1424,56 @@ function createFireworks() {
   }
 }
 
+// ── 解説の生成 ──────────────────────
+// 主語だけでなく「主語のうしろに何が来るか」で be動詞 / Do・Does を見分ける説明を作る
+const SUBJECT_JP = { I:'私', you:'あなた', he:'彼', she:'彼女', it:'それ', we:'私たち', they:'彼ら' };
+const BE_NOUN_WORDS = ['friends', 'students', 'teachers']; // 「だれ・なに」を表す名詞
+const WHEN_TO_USE = {
+  Am: '主語が I', Is: '主語が he / she / it', Are: '主語が you / we / they',
+  Do: '主語が I / you / we / they', Does: '主語が he / she / it'
+};
+function isBeWord(w) { return w === 'Am' || w === 'Is' || w === 'Are'; }
+
+function buildExplanation(q, userChoice, isCorrect) {
+  const words = q.rest.replace(/\?$/, '').split(' ');
+  const subj = words[0];
+  const after = words.slice(1).join(' ');
+  const subjJp = SUBJECT_JP[subj] || subj;
+  const third = (subj === 'he' || subj === 'she' || subj === 'it');
+  const beForm = subj === 'I' ? 'Am' : (third ? 'Is' : 'Are');
+  const doForm = third ? 'Does' : 'Do';
+  const qIsBe = isBeWord(q.ans);
+  let html = '';
+
+  if (qIsBe) {
+    const kind = BE_NOUN_WORDS.indexOf(words[1]) !== -1
+      ? '「だれ・なに」を表すことば' : '「ようす・状態」を表すことば';
+    html += `<div class="ex-step">① <strong>${subj}</strong> のうしろは <strong>${after}</strong>。${kind}で、動作の動詞（play など）がない → <strong class="w-be">Am / Is / Are</strong> のなかま。</div>`;
+    html += `<div class="ex-step">② 主語が <strong>${subj}</strong>（${subjJp}）だから <strong class="w-be">${q.ans}</strong>。</div>`;
+  } else {
+    const verb = words[1];
+    html += `<div class="ex-step">① <strong>${subj}</strong> のうしろに <strong>${verb}</strong> がある。動作・習慣を表す一般動詞 → <strong class="w-do">Do / Does</strong> のなかま。</div>`;
+    html += `<div class="ex-step">② 主語が <strong>${subj}</strong>（${subjJp}）だから <strong class="w-do">${q.ans}</strong>。${third ? 'he / she / it のときだけ Does。' : 'he / she / it 以外は Do。'}</div>`;
+  }
+
+  // まちがえたとき：えらんだ語はどんなときに使うか
+  if (!isCorrect && userChoice) {
+    if (qIsBe && !isBeWord(userChoice)) {
+      html += `<div class="ex-miss">えらんだ ${userChoice} は、うしろに play や like などの「動詞」があるときに使うよ。</div>`;
+    } else if (!qIsBe && isBeWord(userChoice)) {
+      html += `<div class="ex-miss">えらんだ ${userChoice} は、うしろが happy などの「ようす・状態」のときに使うよ。</div>`;
+    } else {
+      html += `<div class="ex-miss">えらんだ ${userChoice} は、${WHEN_TO_USE[userChoice]} のときに使うよ。</div>`;
+    }
+  }
+
+  // 同じ主語で be動詞 と Do/Does を並べてくらべる
+  html += `<div class="ex-compare"><div class="ex-title">📝 くらべてみよう</div>`
+    + `<div class="ex-line"><strong class="w-be">${beForm}</strong> ${subj} happy? <span class="ex-note">… ようす・状態</span></div>`
+    + `<div class="ex-line"><strong class="w-do">${doForm}</strong> ${subj} play tennis? <span class="ex-note">… 動作・習慣（一般動詞）</span></div></div>`;
+  return html;
+}
+
 // フィードバック表示
 function showFeedback(isCorrect, userChoice, question) {
   const icon = document.getElementById('feedbackIcon');
@@ -1356,19 +1498,8 @@ function showFeedback(isCorrect, userChoice, question) {
   // TTS: 英語の文を読み上げる
   speakSentence(correctSentence);
 
-  // 解説
-  let explanationText = '';
-  if (question.ans === 'Am') {
-    explanationText = '「私（I）」に対する疑問文なので <strong>Am</strong> を使います。';
-  } else if (question.ans === 'Is') {
-    explanationText = '「彼・彼女・それ（He/She/It）」に対する疑問文なので <strong>Is</strong> を使います。';
-  } else if (question.ans === 'Are') {
-    explanationText = '「あなた・私たち・彼ら（You/We/They）」に対する疑問文なので <strong>Are</strong> を使います。';
-  } else if (question.ans === 'Do') {
-    explanationText = '「動作・習慣」について「あなた・私たち・彼ら」に聞くときは <strong>Do</strong> を使います。';
-  } else if (question.ans === 'Does') {
-    explanationText = '「動作・習慣」について「彼・彼女・それ」に聞くときは <strong>Does</strong> を使います。';
-  }
+  // 解説（「うしろに何が来るか」→「主語」の順で説明する）
+  const explanationText = buildExplanation(question, userChoice, isCorrect);
 
   explanation.innerHTML = explanationText;
 
@@ -1389,10 +1520,22 @@ function nextQuestion() {
 
 // 前の問題
 function goBack() {
+  if (isTimeAttack) return;
   if (idx > 0) {
     idx--;
-    score = Math.max(0, score - 10); // スコア調整
-    if (combo > 0) combo--; // コンボ調整
+    // 戻った問題の集計を取り消す（答え直しで正解数が二重に数えられないように）
+    const log = answerLog[idx];
+    if (log) {
+      if (log.correct) {
+        correctCount = Math.max(0, correctCount - 1);
+        score = Math.max(0, score - log.gain);
+      }
+      combo = log.comboBefore;
+      answerLog[idx] = null;
+      recentAnswers.pop();
+    }
+    document.getElementById('scoreDisplay').textContent = score;
+    document.getElementById('comboDisplay').textContent = combo;
     loadQuestion();
   }
 }
@@ -1416,7 +1559,8 @@ function showNearMissBanner(accuracy, total, correct) {
 // 結果表示（通常モード）
 function showResult() {
   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-  const finalScore = Math.round((score / (totalQuestions * 10)) * 100);
+  // 100点満点の点数は正答率そのもの（連続ボーナス込みのゲーム内スコアだと100点を超えてしまうため）
+  const finalScore = accuracy;
 
   // → MoWISE portal へスコア送信 (WiseGame Bridge)
   try {
@@ -1480,12 +1624,69 @@ function goHome() {
   showScreen('home');
 }
 
-// WiseXP SDK init
-if(window.WiseXP) window.WiseXP.init('aredo-game');
+// ── URLパラメータによる直接起動（ディープリンク）──
+//   ?level=be|do|does   段階（be=Am/Is/Are, do=+Do, does=+Does）。easy/normal/hard, 1/2/3 でも可
+//   ?count=10           問題数（1〜その段階の全問題数。all で全部）
+//   ?mode=timeattack    60秒タイムアタックで開始（省略時は時間制限なしの通常モード）
+//   level / count / mode のどれかがあれば、メニューを飛ばしてすぐ始める。
+function applyDeepLink() {
+  let params;
+  try { params = new URLSearchParams(window.location.search); } catch (e) { return; }
+  const LEVELS = { be:'easy', easy:'easy', '1':'easy', 'do':'normal', normal:'normal', '2':'normal',
+                   does:'hard', hard:'hard', '3':'hard' };
+  const rawLevel = (params.get('level') || params.get('stage') || params.get('difficulty') || '').toLowerCase();
+  const rawCount = (params.get('count') || '').toLowerCase();
+  const rawMode = (params.get('mode') || '').toLowerCase();
+  const level = LEVELS[rawLevel];
+  const isTA = rawMode === 'timeattack' || rawMode === 'time';
+  let countOk = false;
+
+  if (level) selectDifficulty(level);
+
+  if (rawCount) {
+    const sel = document.getElementById('numSelect');
+    if (rawCount === 'all') {
+      sel.value = 'all'; countOk = true;
+    } else {
+      const n = parseInt(rawCount, 10);
+      if (n > 0) {
+        const max = getPool(difficulty).length;
+        const v = String(Math.min(n, max));
+        if (!Array.from(sel.options).some(o => o.value === v)) {
+          const opt = document.createElement('option');
+          opt.value = v; opt.textContent = v + '問';
+          sel.insertBefore(opt, sel.firstChild);
+        }
+        sel.value = v; countOk = true;
+      }
+    }
+  }
+
+  if (isTA) startTimeAttack();
+  else if (level || countOk || rawMode === 'practice' || rawMode === 'normal') startGame();
+}
+
 
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
   selectDifficulty('easy'); // デフォルト難易度
+
+  // MoWISE ポータルの iframe 内では「学習ホームにもどる」を出さない（枠の中で別サイトが開いてしまうため）
+  if (window.parent !== window) {
+    document.querySelectorAll('.portal-link').forEach(a => a.style.display = 'none');
+  }
+
+  // WiseXP SDK init
+  // （SDK の <script> はこのスクリプトより後ろにあるため、読み込み完了後のここで呼ぶ。
+  //   以前はSDK読み込み前に呼んでいて、init が一度も実行されていなかった）
+  try {
+    if (window.WiseXP) {
+      const r = window.WiseXP.init('aredo-game');
+      if (r && typeof r.catch === 'function') r.catch(() => {});
+    }
+  } catch (e) {}
+
+  applyDeepLink();
 
   // キーボードショートカット
   document.addEventListener('keydown', function(e) {
